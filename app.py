@@ -34,6 +34,7 @@ PROFILE_PHOTO_TYPES = {
         lambda data: data.startswith(b"RIFF") and data[8:12] == b"WEBP",
     ),
 }
+MAX_MESSAGE_LENGTH = 2000
 
 
 def fail(code, msg):
@@ -94,6 +95,15 @@ def tutor_rate_data(conn, uid):
     ).fetchone()
     rate = row["rate_per_hour"] if row else None
     return {"is_free": rate is None, "rate_per_hour": rate}
+
+
+def get_user_conversation(conn, conversation_id, uid):
+    return conn.execute(
+        """SELECT id, user_1_id, user_2_id, created_at
+           FROM conversations
+           WHERE id = ? AND (user_1_id = ? OR user_2_id = ?)""",
+        (conversation_id, uid, uid),
+    ).fetchone()
 
 
 @app.get("/")
@@ -806,6 +816,192 @@ def delete_tutor_availability(slot_id=None):
 def logout():
     session.clear()
     return jsonify(message="Logged out")
+
+
+@app.post("/conversations")
+def create_conversation():
+    uid = session.get("uid")
+    if not uid:
+        return fail(401, "Not authenticated")
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return fail(400, "Conversation must be a JSON object")
+    other_user_id = data.get("other_user_id")
+    if isinstance(other_user_id, bool) or not isinstance(other_user_id, int) or other_user_id < 1:
+        return fail(400, "A valid other_user_id is required")
+    if other_user_id == uid:
+        return fail(400, "You cannot start a conversation with yourself")
+
+    user_1_id, user_2_id = sorted((uid, other_user_id))
+    conn = get_db()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        other_user = conn.execute(
+            "SELECT id FROM users WHERE id = ?", (other_user_id,)
+        ).fetchone()
+        if not other_user:
+            conn.rollback()
+            return fail(404, "User not found")
+        insert_cursor = conn.execute(
+            """INSERT OR IGNORE INTO conversations (user_1_id, user_2_id)
+               VALUES (?, ?)""",
+            (user_1_id, user_2_id),
+        )
+        created = insert_cursor.rowcount == 1
+        conversation = conn.execute(
+            """SELECT id, user_1_id, user_2_id, created_at
+               FROM conversations WHERE user_1_id = ? AND user_2_id = ?""",
+            (user_1_id, user_2_id),
+        ).fetchone()
+        conn.commit()
+    finally:
+        conn.close()
+    response = jsonify(
+        id=conversation["id"],
+        user_1_id=conversation["user_1_id"],
+        user_2_id=conversation["user_2_id"],
+        created_at=conversation["created_at"],
+    )
+    response.status_code = 201 if created else 200
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+@app.get("/conversations")
+def list_conversations():
+    uid = session.get("uid")
+    if not uid:
+        return fail(401, "Not authenticated")
+    conn = get_db()
+    rows = conn.execute(
+        """SELECT conversations.id, conversations.created_at,
+                  other_user.id AS other_user_id,
+                  other_user.full_name AS other_user_name,
+                  substr(latest.content, 1, 160) AS latest_message,
+                  latest.sent_at AS latest_sent_at,
+                  (SELECT COUNT(*) FROM messages AS unread
+                   WHERE unread.conversation_id = conversations.id
+                     AND unread.sender_id != ?
+                     AND unread.read_at IS NULL) AS unread_count
+           FROM conversations
+           JOIN users AS other_user
+             ON other_user.id = CASE
+                 WHEN conversations.user_1_id = ? THEN conversations.user_2_id
+                 ELSE conversations.user_1_id END
+           LEFT JOIN messages AS latest
+             ON latest.id = (
+                 SELECT message.id FROM messages AS message
+                 WHERE message.conversation_id = conversations.id
+                 ORDER BY message.sent_at DESC, message.id DESC LIMIT 1
+             )
+           WHERE conversations.user_1_id = ? OR conversations.user_2_id = ?
+           ORDER BY COALESCE(latest.sent_at, conversations.created_at) DESC,
+                    latest.id DESC, conversations.id DESC""",
+        (uid, uid, uid, uid),
+    ).fetchall()
+    conn.close()
+    response = jsonify(
+        conversations=[
+            {
+                "id": row["id"],
+                "other_user_id": row["other_user_id"],
+                "other_user_name": row["other_user_name"],
+                "latest_message": row["latest_message"],
+                "latest_sent_at": row["latest_sent_at"],
+                "created_at": row["created_at"],
+                "unread_count": row["unread_count"],
+            }
+            for row in rows
+        ]
+    )
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+@app.get("/conversations/<int:conversation_id>/messages")
+def list_messages(conversation_id):
+    uid = session.get("uid")
+    if not uid:
+        return fail(401, "Not authenticated")
+    conn = get_db()
+    conversation = get_user_conversation(conn, conversation_id, uid)
+    if not conversation:
+        conn.close()
+        return fail(404, "Conversation not found")
+    rows = conn.execute(
+        """SELECT messages.id, messages.sender_id, users.full_name AS sender_name,
+                  messages.content, messages.sent_at, messages.read_at
+           FROM messages JOIN users ON users.id = messages.sender_id
+           WHERE messages.conversation_id = ?
+           ORDER BY messages.sent_at, messages.id""",
+        (conversation_id,),
+    ).fetchall()
+    conn.close()
+    response = jsonify(messages=[dict(row) for row in rows])
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+@app.post("/conversations/<int:conversation_id>/messages")
+def send_message(conversation_id):
+    uid = session.get("uid")
+    if not uid:
+        return fail(401, "Not authenticated")
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return fail(400, "Message must be a JSON object")
+    content = data.get("content")
+    if not isinstance(content, str) or not content.strip():
+        return fail(400, "Message cannot be empty")
+    content = content.strip()
+    if len(content) > MAX_MESSAGE_LENGTH:
+        return fail(400, f"Message must be {MAX_MESSAGE_LENGTH} characters or fewer")
+
+    conn = get_db()
+    conversation = get_user_conversation(conn, conversation_id, uid)
+    if not conversation:
+        conn.close()
+        return fail(404, "Conversation not found")
+    cursor = conn.execute(
+        "INSERT INTO messages (conversation_id, sender_id, content) VALUES (?, ?, ?)",
+        (conversation_id, uid, content),
+    )
+    conn.commit()
+    row = conn.execute(
+        """SELECT messages.id, messages.sender_id, users.full_name AS sender_name,
+                  messages.content, messages.sent_at, messages.read_at
+           FROM messages JOIN users ON users.id = messages.sender_id
+           WHERE messages.id = ?""",
+        (cursor.lastrowid,),
+    ).fetchone()
+    conn.close()
+    response = jsonify(message=dict(row))
+    response.status_code = 201
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+@app.put("/conversations/<int:conversation_id>/read")
+def mark_conversation_read(conversation_id):
+    uid = session.get("uid")
+    if not uid:
+        return fail(401, "Not authenticated")
+    conn = get_db()
+    conversation = get_user_conversation(conn, conversation_id, uid)
+    if not conversation:
+        conn.close()
+        return fail(404, "Conversation not found")
+    cursor = conn.execute(
+        """UPDATE messages SET read_at = strftime('%Y-%m-%d %H:%M:%f', 'now')
+           WHERE conversation_id = ? AND sender_id != ? AND read_at IS NULL""",
+        (conversation_id, uid),
+    )
+    conn.commit()
+    updated_count = cursor.rowcount
+    conn.close()
+    response = jsonify(message="Conversation marked as read", updated_count=updated_count)
+    response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 if __name__ == "__main__":

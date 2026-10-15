@@ -18,6 +18,7 @@ python app.py                  # http://localhost:3000
 ```
 
 The database file `crai.db` and all tables are created automatically from `schema.sql`.
+Messages and conversations are stored locally in SQLite.
 
 Sample logins after seeding (password `password123`): `ana@example.com` (tutor), `ben@example.com` (learner), `cara@example.com` (both).
 
@@ -41,6 +42,11 @@ Profile photos are stored locally in `uploads/profile_photos/` and excluded from
 | GET | `/profile/photo` | Returns the logged-in user's uploaded profile photo |
 | POST | `/profile/photo` | Uploads a PNG, JPEG, or WebP profile photo (up to 5 MB) |
 | DELETE | `/profile/photo` | Removes the logged-in user's photo and restores the default avatar |
+| POST | `/conversations` | Starts or returns a conversation with `{ "other_user_id": 2 }` |
+| GET | `/conversations` | Lists the logged-in user's conversations, latest-message previews, and unread counts |
+| GET | `/conversations/<id>/messages` | Lists messages in a conversation the logged-in user participates in |
+| POST | `/conversations/<id>/messages` | Sends a non-empty message (up to 2,000 characters) in a conversation |
+| PUT | `/conversations/<id>/read` | Marks incoming messages in a participant's conversation as read |
 | GET | `/tutors/search?subject=<name>` | Ticket search route; supports case-insensitive subject, `day`, optional paired `start_time`/`end_time`, `free=true|false`, and `sort=name|rate_asc|rate_desc` filters |
 | GET | `/api/tutors?subject=<name>` | Backward-compatible alias for tutor search; also supports `rate=free|paid` |
 | GET | `/tutor/subjects` | Lists a tutor's subjects and the shared subject catalog |
@@ -66,12 +72,12 @@ Profile photos are stored locally in `uploads/profile_photos/` and excluded from
 app.py          Flask API + serves the frontend
 db.py           database connection + schema setup
 seed.py         sample data
-schema.sql      tables: users, subjects, tutor_subjects, availability, tutor_rates
-                (users includes the profile-photo filename)
+schema.sql      tables: users, subjects, tutor_subjects, availability, tutor_rates,
+                conversations, and messages
 public/index.html   login, register, dashboard
 public/default-avatar.svg   fallback avatar when a user has not uploaded a photo
 ```
 
 ## Out of scope (later sprints)
 
-Matching/search, booking, messaging, ratings, payments. The dashboard shortcuts are placeholders.
+Bookings, ratings, and payments. Tutor discovery currently supports subject, availability, and rate filters.

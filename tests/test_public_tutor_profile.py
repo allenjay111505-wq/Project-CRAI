@@ -47,6 +47,7 @@ class PublicTutorProfileTestCase(unittest.TestCase):
         response = self.client.get(f"/tutors/{tutor_id}")
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"publicTutorSubjects", response.data)
+        self.assertIn(b"Message tutor", response.data)
         response.close()
 
     def test_empty_tutor_profile_returns_empty_lists_and_free_rate(self):
