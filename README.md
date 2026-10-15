@@ -3,6 +3,8 @@
 Registration, login, database and a role-based dashboard for the peer-to-peer tutoring system.
 Stack: Python + Flask, SQLite (built into Python), hashed passwords (Werkzeug), signed httpOnly session cookie, plain HTML/CSS/JS frontend.
 
+Tutors can add subjects from the shared subject list or enter a new subject, and remove subjects from their profile. A tutor must keep at least one subject.
+
 ## Run locally
 
 Requires Python 3.9+.
@@ -34,6 +36,9 @@ Sample logins after seeding (password `password123`): `ana@example.com` (tutor),
 | POST | `/register` | Validates input, rejects duplicate email, stores a password hash |
 | POST | `/login` | Starts a session, or `{ "error": "Invalid email or password" }` |
 | GET | `/dashboard` | Protected; returns the logged-in user (no password hash) |
+| GET | `/tutor/subjects` | Lists a tutor's subjects and the shared subject catalog |
+| POST | `/tutor/subjects` | Adds a listed or newly entered subject to the logged-in tutor |
+| DELETE | `/tutor/subjects/<id>` | Removes a subject from the logged-in tutor; the last subject cannot be removed |
 | POST | `/logout` | Ends the session |
 
 ## Structure

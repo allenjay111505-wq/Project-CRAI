@@ -26,6 +26,12 @@ button.ghost{background:transparent;color:var(--brand);border:1px solid var(--br
 .dash{max-width:760px;margin:0 auto;padding:24px 16px}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
 .grid button{text-align:left}
+.subject-list{list-style:none;padding:0;margin:0}
+.subject-list li{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}
+.subject-list li:last-child{border-bottom:0}
+.subject-form{display:flex;gap:8px;align-items:end;margin-top:14px}
+.subject-form label{flex:1}
+.subject-form input{display:block}
 .hide{display:none}
 .toast{color:var(--mute);font-size:.9rem;margin-top:10px}
 </style>
@@ -86,7 +92,17 @@ button.ghost{background:transparent;color:var(--brand);border:1px solid var(--br
     <div class="card"><h1 id="welcome"></h1><p class="sub" id="roleLine"></p>
       <div id="profile" class="hide"></div></div>
     <div id="tutorBox" class="card hide"><h2>Tutor tools</h2>
-      <div class="grid"><button class="soon">Set my subjects</button><button class="soon">Set my availability</button><button class="soon">Set my rate</button></div></div>
+      <h3>Subjects I teach</h3>
+      <ul id="tutorSubjectList" class="subject-list"></ul>
+      <form id="tutorSubjectForm" class="subject-form">
+        <label for="tutorSubjectName">Add a subject
+          <input id="tutorSubjectName" list="tutorSubjectOptions" maxlength="100" autocomplete="off">
+          <datalist id="tutorSubjectOptions"></datalist>
+        </label>
+        <button>Add</button>
+      </form>
+      <div class="err" id="tutorSubjectErr" role="alert"></div>
+      <div class="grid"><button class="soon">Set my availability</button><button class="soon">Set my rate</button></div></div>
     <div id="learnerBox" class="card hide"><h2>Learner tools</h2>
       <div class="grid"><button class="soon">Find a tutor</button><button class="soon">List subjects I need help with</button></div></div>
     <div class="toast" id="soonMsg"></div>
@@ -95,9 +111,10 @@ button.ghost{background:transparent;color:var(--brand);border:1px solid var(--br
 
 <script>
 const $ = id => document.getElementById(id);
-const api = async (url, body) => {
-  const r = await fetch(url, body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
-    : url === '/logout' ? { method: 'POST' } : {});
+const api = async (url, body, method = body ? 'POST' : 'GET') => {
+  const options = { method };
+  if (body) { options.headers = { 'Content-Type': 'application/json' }; options.body = JSON.stringify(body); }
+  const r = await fetch(url, options);
   let data = {}; try { data = await r.json(); } catch {}
   return { ok: r.ok, data };
 };
@@ -110,12 +127,58 @@ async function route() {
   if (!ok) { show('auth'); return; }
   $('welcome').textContent = 'Welcome, ' + data.full_name + '!';
   $('roleLine').textContent = 'Role: ' + data.role;
-  $('profile').innerHTML = `<p>Email: ${esc(data.email)}<br>Student ID: ${esc(data.student_id)}<br>Course: ${esc(data.course)}, Year ${data.year_level}</p>`;
+  const subjectLine = data.subjects.length ? `<br>Subjects: ${data.subjects.map(esc).join(', ')}` : '';
+  $('profile').innerHTML = `<p>Email: ${esc(data.email)}<br>Student ID: ${esc(data.student_id)}<br>Course: ${esc(data.course)}, Year ${data.year_level}${subjectLine}</p>`;
   $('tutorBox').classList.toggle('hide', data.role === 'learner');
   $('learnerBox').classList.toggle('hide', data.role === 'tutor');
+  if (data.role !== 'learner') {
+    const { ok: subjectsOk, data: subjectsData } = await api('/tutor/subjects');
+    if (subjectsOk) renderTutorSubjects(subjectsData.subjects, subjectsData.available_subjects);
+  }
   show('dashboard');
 }
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+function renderTutorSubjects(subjects, availableSubjects) {
+  const list = $('tutorSubjectList');
+  list.replaceChildren();
+  subjects.forEach(subject => {
+    const item = document.createElement('li');
+    const name = document.createElement('span');
+    name.textContent = subject.subject_name;
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'ghost';
+    remove.textContent = 'Remove';
+    remove.disabled = subjects.length === 1;
+    remove.title = remove.disabled ? 'Add another subject before removing this one' : '';
+    remove.onclick = async () => {
+      $('tutorSubjectErr').textContent = '';
+      const { ok, data } = await api(`/tutor/subjects/${subject.id}`, null, 'DELETE');
+      if (ok) await route();
+      else $('tutorSubjectErr').textContent = data.error || 'Could not remove subject';
+    };
+    item.append(name, remove);
+    list.append(item);
+  });
+  const options = $('tutorSubjectOptions');
+  options.replaceChildren();
+  availableSubjects.forEach(subject => {
+    const option = document.createElement('option');
+    option.value = subject.subject_name;
+    options.append(option);
+  });
+}
+
+$('tutorSubjectForm').onsubmit = async e => {
+  e.preventDefault();
+  const subject_name = $('tutorSubjectName').value.trim();
+  $('tutorSubjectErr').textContent = '';
+  if (!subject_name) { $('tutorSubjectErr').textContent = 'Enter a subject name'; return; }
+  const { ok, data } = await api('/tutor/subjects', { subject_name });
+  if (ok) { $('tutorSubjectForm').reset(); await route(); }
+  else $('tutorSubjectErr').textContent = data.error || 'Could not add subject';
+};
 
 $('toReg').onclick = () => swap(true);
 $('toLogin').onclick = () => swap(false);
@@ -153,7 +216,7 @@ $('regForm').onsubmit = async e => {
   else $('rErr').textContent = data.error || 'Registration failed';
 };
 
-$('logoutBtn').onclick = async () => { await api('/logout'); show('auth'); swap(false); $('notice').textContent = ''; };
+$('logoutBtn').onclick = async () => { await api('/logout', null, 'POST'); show('auth'); swap(false); $('notice').textContent = ''; };
 $('profileBtn').onclick = () => $('profile').classList.toggle('hide');
 document.querySelectorAll('.soon').forEach(b => b.onclick = () => { $('soonMsg').textContent = '"' + b.textContent + '" arrives in a later sprint.'; });
 
