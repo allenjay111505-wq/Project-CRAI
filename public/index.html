@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C.R.A.I. — Peer Tutoring</title>
+<style>
+:root{--bg:#f4f6fb;--card:#fff;--ink:#1c2333;--mute:#667;--brand:#2f5bea;--err:#c62828;--line:#dde2ee}
+@media(prefers-color-scheme:dark){:root{--bg:#12151f;--card:#1b2030;--ink:#e8ebf5;--mute:#9aa3bd;--brand:#6c8cff;--err:#ff7b7b;--line:#2c3350}}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,sans-serif;background:var(--bg);color:var(--ink)}
+.wrap{max-width:460px;margin:0 auto;padding:24px 16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:16px}
+h1{font-size:1.4rem;margin:0 0 4px}h2{font-size:1.1rem;margin:0 0 12px}
+p.sub{color:var(--mute);margin:0 0 16px}
+label{display:block;font-size:.85rem;margin:12px 0 4px}
+input,select{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font-size:1rem}
+.row{display:flex;gap:10px}.row>div{flex:1}
+.err{color:var(--err);font-size:.8rem;min-height:1em;margin-top:2px}
+button{padding:10px 14px;border:0;border-radius:8px;background:var(--brand);color:#fff;font-size:1rem;cursor:pointer}
+button.ghost{background:transparent;color:var(--brand);border:1px solid var(--brand)}
+.full{width:100%;margin-top:18px}
+.link{background:none;color:var(--brand);padding:0;text-decoration:underline}
+.nav{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(--card);border-bottom:1px solid var(--line)}
+.nav div{display:flex;gap:8px}
+.dash{max-width:760px;margin:0 auto;padding:24px 16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.grid button{text-align:left}
+.hide{display:none}
+.toast{color:var(--mute);font-size:.9rem;margin-top:10px}
+</style>
+</head>
+<body>
+
+<!-- LOGIN / REGISTER -->
+<div id="auth" class="wrap hide">
+  <h1>Project C.R.A.I.</h1>
+  <p class="sub">Collaborative Review &amp; Assistance Intelligence</p>
+
+  <form id="loginForm" class="card" novalidate>
+    <h2>Log in</h2>
+    <label for="lEmail">Email</label><input id="lEmail" type="email" autocomplete="email">
+    <div class="err" data-for="lEmail"></div>
+    <label for="lPass">Password</label><input id="lPass" type="password" autocomplete="current-password">
+    <div class="err" data-for="lPass"></div>
+    <label><input id="lShow" type="checkbox" style="width:auto"> Show password</label>
+    <div class="err" id="lErr"></div>
+    <button class="full">Log in</button>
+    <p class="sub" style="margin-top:14px">No account? <button type="button" class="link" id="toReg">Register</button></p>
+  </form>
+
+  <form id="regForm" class="card hide" novalidate>
+    <h2>Create account</h2>
+    <label for="rName">Full name</label><input id="rName">
+    <div class="err" data-for="rName"></div>
+    <label for="rEmail">Email</label><input id="rEmail" type="email">
+    <div class="err" data-for="rEmail"></div>
+    <label for="rSid">Student ID</label><input id="rSid">
+    <div class="err" data-for="rSid"></div>
+    <div class="row">
+      <div><label for="rCourse">Course</label><input id="rCourse" placeholder="e.g. BSCS"><div class="err" data-for="rCourse"></div></div>
+      <div><label for="rYear">Year level</label>
+        <select id="rYear"><option value="">Select</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+        <div class="err" data-for="rYear"></div></div>
+    </div>
+    <label for="rPass">Password (min 8 characters)</label><input id="rPass" type="password" autocomplete="new-password">
+    <div class="err" data-for="rPass"></div>
+    <label for="rPass2">Confirm password</label><input id="rPass2" type="password" autocomplete="new-password">
+    <div class="err" data-for="rPass2"></div>
+    <label for="rRole">I want to be a</label>
+    <select id="rRole"><option value="">Select</option><option value="tutor">Tutor</option><option value="learner">Learner</option><option value="both">Both</option></select>
+    <div class="err" data-for="rRole"></div>
+    <div class="err" id="rErr"></div>
+    <button class="full">Register</button>
+    <p class="sub" style="margin-top:14px">Have an account? <button type="button" class="link" id="toLogin">Log in</button></p>
+  </form>
+  <div id="notice" class="toast"></div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard" class="hide">
+  <div class="nav"><strong>C.R.A.I.</strong>
+    <div><button class="ghost" id="profileBtn">Profile</button><button id="logoutBtn">Logout</button></div>
+  </div>
+  <div class="dash">
+    <div class="card"><h1 id="welcome"></h1><p class="sub" id="roleLine"></p>
+      <div id="profile" class="hide"></div></div>
+    <div id="tutorBox" class="card hide"><h2>Tutor tools</h2>
+      <div class="grid"><button class="soon">Set my subjects</button><button class="soon">Set my availability</button><button class="soon">Set my rate</button></div></div>
+    <div id="learnerBox" class="card hide"><h2>Learner tools</h2>
+      <div class="grid"><button class="soon">Find a tutor</button><button class="soon">List subjects I need help with</button></div></div>
+    <div class="toast" id="soonMsg"></div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const api = async (url, body) => {
+  const r = await fetch(url, body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
+    : url === '/logout' ? { method: 'POST' } : {});
+  let data = {}; try { data = await r.json(); } catch {}
+  return { ok: r.ok, data };
+};
+const setErr = (id, msg) => { const e = document.querySelector(`[data-for="${id}"]`); if (e) e.textContent = msg || ''; };
+const show = view => { ['auth', 'dashboard'].forEach(v => $(v).classList.toggle('hide', v !== view)); };
+const swap = reg => { $('loginForm').classList.toggle('hide', reg); $('regForm').classList.toggle('hide', !reg); };
+
+async function route() {
+  const { ok, data } = await api('/dashboard');
+  if (!ok) { show('auth'); return; }
+  $('welcome').textContent = 'Welcome, ' + data.full_name + '!';
+  $('roleLine').textContent = 'Role: ' + data.role;
+  $('profile').innerHTML = `<p>Email: ${esc(data.email)}<br>Student ID: ${esc(data.student_id)}<br>Course: ${esc(data.course)}, Year ${data.year_level}</p>`;
+  $('tutorBox').classList.toggle('hide', data.role === 'learner');
+  $('learnerBox').classList.toggle('hide', data.role === 'tutor');
+  show('dashboard');
+}
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+$('toReg').onclick = () => swap(true);
+$('toLogin').onclick = () => swap(false);
+$('lShow').onchange = e => { $('lPass').type = e.target.checked ? 'text' : 'password'; };
+
+$('loginForm').onsubmit = async e => {
+  e.preventDefault();
+  const email = $('lEmail').value.trim(), password = $('lPass').value;
+  setErr('lEmail', email ? '' : 'Email is required'); setErr('lPass', password ? '' : 'Password is required');
+  $('lErr').textContent = '';
+  if (!email || !password) return;
+  const { ok, data } = await api('/login', { email, password });
+  if (ok) { $('loginForm').reset(); route(); } else $('lErr').textContent = data.error || 'Login failed';
+};
+
+$('regForm').onsubmit = async e => {
+  e.preventDefault();
+  const v = { full_name: $('rName').value.trim(), email: $('rEmail').value.trim(), student_id: $('rSid').value.trim(),
+    course: $('rCourse').value.trim(), year_level: $('rYear').value, password: $('rPass').value, role: $('rRole').value };
+  const errs = {
+    rName: !v.full_name && 'Full name is required',
+    rEmail: !v.email ? 'Email is required' : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.email) && 'Enter a valid email',
+    rSid: !v.student_id && 'Student ID is required',
+    rCourse: !v.course && 'Course is required',
+    rYear: !v.year_level && 'Select a year level',
+    rPass: !v.password ? 'Password is required' : v.password.length < 8 && 'At least 8 characters',
+    rPass2: v.password !== $('rPass2').value && 'Passwords do not match',
+    rRole: !v.role && 'Select a role'
+  };
+  Object.entries(errs).forEach(([k, m]) => setErr(k, m));
+  $('rErr').textContent = '';
+  if (Object.values(errs).some(Boolean)) return;
+  const { ok, data } = await api('/register', v);
+  if (ok) { $('regForm').reset(); swap(false); $('notice').textContent = 'Registered! You can now log in.'; }
+  else $('rErr').textContent = data.error || 'Registration failed';
+};
+
+$('logoutBtn').onclick = async () => { await api('/logout'); show('auth'); swap(false); $('notice').textContent = ''; };
+$('profileBtn').onclick = () => $('profile').classList.toggle('hide');
+document.querySelectorAll('.soon').forEach(b => b.onclick = () => { $('soonMsg').textContent = '"' + b.textContent + '" arrives in a later sprint.'; });
+
+// Re-check session on back/forward navigation so a logged-out user can't see the dashboard
+window.addEventListener('pageshow', route);
+route();
+</script>
+</body>
+</html>

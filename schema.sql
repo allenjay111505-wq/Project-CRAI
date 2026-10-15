@@ -1,0 +1,31 @@
+CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  full_name TEXT NOT NULL,
+  email TEXT NOT NULL UNIQUE,
+  student_id TEXT NOT NULL,
+  course TEXT NOT NULL,
+  year_level INTEGER NOT NULL,
+  password_hash TEXT NOT NULL,
+  role TEXT NOT NULL CHECK (role IN ('tutor','learner','both')),
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS subjects (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  subject_name TEXT NOT NULL UNIQUE
+);
+CREATE TABLE IF NOT EXISTS tutor_subjects (
+  tutor_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  subject_id INTEGER NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
+  PRIMARY KEY (tutor_id, subject_id)
+);
+CREATE TABLE IF NOT EXISTS availability (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  tutor_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  day TEXT NOT NULL,
+  start_time TEXT NOT NULL,
+  end_time TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS tutor_rates (
+  tutor_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  rate_per_hour REAL  -- NULL = free
+);
