@@ -26,6 +26,13 @@ button.ghost{background:transparent;color:var(--brand);border:1px solid var(--br
 .dash{max-width:760px;margin:0 auto;padding:24px 16px}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
 .grid button{text-align:left}
+.availability-list{list-style:none;padding:0;margin:0}
+.availability-list li{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}
+.availability-list li:last-child{border-bottom:0}
+.availability-actions{display:flex;gap:6px}
+.availability-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));align-items:end;gap:8px;margin-top:14px}
+.availability-form label{margin:0}
+.availability-form button{margin-top:8px}
 .hide{display:none}
 .toast{color:var(--mute);font-size:.9rem;margin-top:10px}
 </style>
@@ -86,7 +93,29 @@ button.ghost{background:transparent;color:var(--brand);border:1px solid var(--br
     <div class="card"><h1 id="welcome"></h1><p class="sub" id="roleLine"></p>
       <div id="profile" class="hide"></div></div>
     <div id="tutorBox" class="card hide"><h2>Tutor tools</h2>
-      <div class="grid"><button class="soon">Set my subjects</button><button class="soon">Set my availability</button><button class="soon">Set my rate</button></div></div>
+        <h3>Weekly availability</h3>
+        <ul id="availabilityList" class="availability-list"></ul>
+        <form id="availabilityForm" class="availability-form">
+          <label for="availabilityDay">Day
+            <select id="availabilityDay" required>
+              <option value="">Select a day</option>
+              <option>Monday</option><option>Tuesday</option><option>Wednesday</option>
+              <option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option>
+            </select>
+          </label>
+          <label for="availabilityStart">Start time
+            <input id="availabilityStart" type="time" required>
+          </label>
+          <label for="availabilityEnd">End time
+            <input id="availabilityEnd" type="time" required>
+          </label>
+          <div>
+            <button id="availabilitySave">Add slot</button>
+            <button type="button" id="availabilityCancel" class="ghost hide">Cancel</button>
+          </div>
+        </form>
+        <div class="err" id="availabilityErr" role="alert"></div>
+        <div class="grid"><button class="soon">Set my subjects</button><button class="soon">Set my rate</button></div></div>
     <div id="learnerBox" class="card hide"><h2>Learner tools</h2>
       <div class="grid"><button class="soon">Find a tutor</button><button class="soon">List subjects I need help with</button></div></div>
     <div class="toast" id="soonMsg"></div>
@@ -95,15 +124,17 @@ button.ghost{background:transparent;color:var(--brand);border:1px solid var(--br
 
 <script>
 const $ = id => document.getElementById(id);
-const api = async (url, body) => {
-  const r = await fetch(url, body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
-    : url === '/logout' ? { method: 'POST' } : {});
+const api = async (url, body, method = body ? 'POST' : 'GET') => {
+  const options = { method };
+  if (body) { options.headers = { 'Content-Type': 'application/json' }; options.body = JSON.stringify(body); }
+  const r = await fetch(url, options);
   let data = {}; try { data = await r.json(); } catch {}
   return { ok: r.ok, data };
 };
 const setErr = (id, msg) => { const e = document.querySelector(`[data-for="${id}"]`); if (e) e.textContent = msg || ''; };
 const show = view => { ['auth', 'dashboard'].forEach(v => $(v).classList.toggle('hide', v !== view)); };
 const swap = reg => { $('loginForm').classList.toggle('hide', reg); $('regForm').classList.toggle('hide', !reg); };
+let editingAvailabilityId = null;
 
 async function route() {
   const { ok, data } = await api('/dashboard');
@@ -113,9 +144,78 @@ async function route() {
   $('profile').innerHTML = `<p>Email: ${esc(data.email)}<br>Student ID: ${esc(data.student_id)}<br>Course: ${esc(data.course)}, Year ${data.year_level}</p>`;
   $('tutorBox').classList.toggle('hide', data.role === 'learner');
   $('learnerBox').classList.toggle('hide', data.role === 'tutor');
+  if (data.role !== 'learner') {
+    const { ok: availabilityOk, data: availabilityData } = await api('/tutor/availability');
+    if (availabilityOk) renderAvailability(availabilityData.availability);
+  }
   show('dashboard');
 }
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+function resetAvailabilityForm() {
+  editingAvailabilityId = null;
+  $('availabilityForm').reset();
+  $('availabilitySave').textContent = 'Add slot';
+  $('availabilityCancel').classList.add('hide');
+  $('availabilityErr').textContent = '';
+}
+
+function renderAvailability(slots) {
+  const list = $('availabilityList');
+  list.replaceChildren();
+  slots.forEach(slot => {
+    const item = document.createElement('li');
+    const summary = document.createElement('span');
+    summary.textContent = `${slot.day}: ${slot.start_time}–${slot.end_time}`;
+    const actions = document.createElement('div');
+    actions.className = 'availability-actions';
+    const edit = document.createElement('button');
+    edit.type = 'button';
+    edit.className = 'ghost';
+    edit.textContent = 'Edit';
+    edit.onclick = () => {
+      editingAvailabilityId = slot.id;
+      $('availabilityDay').value = slot.day;
+      $('availabilityStart').value = slot.start_time;
+      $('availabilityEnd').value = slot.end_time;
+      $('availabilitySave').textContent = 'Save changes';
+      $('availabilityCancel').classList.remove('hide');
+      $('availabilityErr').textContent = '';
+    };
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'ghost';
+    remove.textContent = 'Remove';
+    remove.onclick = async () => {
+      $('availabilityErr').textContent = '';
+      const { ok, data } = await api(`/tutor/availability/${slot.id}`, null, 'DELETE');
+      if (ok) { resetAvailabilityForm(); await route(); }
+      else $('availabilityErr').textContent = data.error || 'Could not remove slot';
+    };
+    actions.append(edit, remove);
+    item.append(summary, actions);
+    list.append(item);
+  });
+}
+
+$('availabilityForm').onsubmit = async e => {
+  e.preventDefault();
+  $('availabilityErr').textContent = '';
+  const body = {
+    day: $('availabilityDay').value,
+    start_time: $('availabilityStart').value,
+    end_time: $('availabilityEnd').value
+  };
+  const url = editingAvailabilityId === null
+    ? '/tutor/availability'
+    : `/tutor/availability/${editingAvailabilityId}`;
+  const method = editingAvailabilityId === null ? 'POST' : 'PUT';
+  const { ok, data } = await api(url, body, method);
+  if (ok) { resetAvailabilityForm(); await route(); }
+  else $('availabilityErr').textContent = data.error || 'Could not save availability';
+};
+
+$('availabilityCancel').onclick = resetAvailabilityForm;
 
 $('toReg').onclick = () => swap(true);
 $('toLogin').onclick = () => swap(false);
@@ -153,7 +253,7 @@ $('regForm').onsubmit = async e => {
   else $('rErr').textContent = data.error || 'Registration failed';
 };
 
-$('logoutBtn').onclick = async () => { await api('/logout'); show('auth'); swap(false); $('notice').textContent = ''; };
+$('logoutBtn').onclick = async () => { await api('/logout', null, 'POST'); show('auth'); swap(false); $('notice').textContent = ''; };
 $('profileBtn').onclick = () => $('profile').classList.toggle('hide');
 document.querySelectorAll('.soon').forEach(b => b.onclick = () => { $('soonMsg').textContent = '"' + b.textContent + '" arrives in a later sprint.'; });
 

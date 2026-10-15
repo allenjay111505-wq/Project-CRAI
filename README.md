@@ -34,6 +34,10 @@ Sample logins after seeding (password `password123`): `ana@example.com` (tutor),
 | POST | `/register` | Validates input, rejects duplicate email, stores a password hash |
 | POST | `/login` | Starts a session, or `{ "error": "Invalid email or password" }` |
 | GET | `/dashboard` | Protected; returns the logged-in user (no password hash) |
+| GET | `/tutor/availability` | Lists the logged-in tutor's weekly slots by day and start time |
+| POST | `/tutor/availability` | Adds a weekly slot; overlapping slots on the same day are rejected |
+| PUT | `/tutor/availability/<id>` | Edits one of the logged-in tutor's slots |
+| DELETE | `/tutor/availability/<id>` | Removes one of the logged-in tutor's slots |
 | POST | `/logout` | Ends the session |
 
 ## Structure

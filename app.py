@@ -1,7 +1,7 @@
 import os
 import re
 import sqlite3
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from flask import Flask, jsonify, request, session
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -16,10 +16,58 @@ app.config.update(SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE="Lax")
 init_db()
 
 EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
+DAYS = ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
 
 
 def fail(code, msg):
     return jsonify(error=msg), code
+
+
+def require_tutor():
+    uid = session.get("uid")
+    if not uid:
+        return None, fail(401, "Not authenticated")
+    conn = get_db()
+    user = conn.execute("SELECT role FROM users WHERE id = ?", (uid,)).fetchone()
+    conn.close()
+    if not user:
+        session.clear()
+        return None, fail(401, "Not authenticated")
+    if user["role"] not in ("tutor", "both"):
+        return None, fail(403, "Tutor access required")
+    return uid, None
+
+
+def parse_availability(data):
+    if not isinstance(data, dict):
+        return None, "Availability must be a JSON object"
+    day = str(data.get("day", "")).strip().casefold()
+    day = next((name for name in DAYS if name.casefold() == day), None)
+    start_time = str(data.get("start_time", "")).strip()
+    end_time = str(data.get("end_time", "")).strip()
+    if day is None:
+        return None, "Select a valid day of the week"
+    try:
+        start = datetime.strptime(start_time, "%H:%M")
+        end = datetime.strptime(end_time, "%H:%M")
+    except ValueError:
+        return None, "Enter start and end times in HH:MM format"
+    if start.strftime("%H:%M") != start_time or end.strftime("%H:%M") != end_time:
+        return None, "Enter start and end times in HH:MM format"
+    if start >= end:
+        return None, "End time must be later than start time"
+    return (day, start_time, end_time), None
+
+
+def has_availability_overlap(conn, uid, day, start_time, end_time, exclude_id=None):
+    query = """SELECT 1 FROM availability
+               WHERE tutor_id = ? AND day = ?
+                 AND start_time < ? AND end_time > ?"""
+    params = [uid, day, end_time, start_time]
+    if exclude_id is not None:
+        query += " AND id != ?"
+        params.append(exclude_id)
+    return conn.execute(query, params).fetchone() is not None
 
 
 @app.get("/")
@@ -97,6 +145,104 @@ def dashboard():
     resp = jsonify(dict(user))
     resp.headers["Cache-Control"] = "no-store"
     return resp
+
+
+@app.get("/tutor/availability")
+def tutor_availability():
+    uid, error = require_tutor()
+    if error:
+        return error
+    conn = get_db()
+    slots = conn.execute(
+        """SELECT id, day, start_time, end_time FROM availability
+           WHERE tutor_id = ?
+           ORDER BY CASE day
+               WHEN 'Monday' THEN 1 WHEN 'Tuesday' THEN 2
+               WHEN 'Wednesday' THEN 3 WHEN 'Thursday' THEN 4
+               WHEN 'Friday' THEN 5 WHEN 'Saturday' THEN 6
+               WHEN 'Sunday' THEN 7 ELSE 8 END, start_time""",
+        (uid,),
+    ).fetchall()
+    conn.close()
+    return jsonify(availability=[dict(slot) for slot in slots])
+
+
+@app.post("/tutor/availability")
+def add_tutor_availability():
+    uid, error = require_tutor()
+    if error:
+        return error
+    parsed, error = parse_availability(request.get_json(silent=True) or {})
+    if error:
+        return fail(400, error)
+    day, start_time, end_time = parsed
+    conn = get_db()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        if has_availability_overlap(conn, uid, day, start_time, end_time):
+            conn.rollback()
+            return fail(409, "This time overlaps another slot on that day")
+        conn.execute(
+            """INSERT INTO availability (tutor_id, day, start_time, end_time)
+               VALUES (?, ?, ?, ?)""",
+            (uid, day, start_time, end_time),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return jsonify(message="Availability added"), 201
+
+
+@app.put("/tutor/availability/<int:slot_id>")
+def update_tutor_availability(slot_id):
+    uid, error = require_tutor()
+    if error:
+        return error
+    parsed, error = parse_availability(request.get_json(silent=True) or {})
+    if error:
+        return fail(400, error)
+    day, start_time, end_time = parsed
+    conn = get_db()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        slot = conn.execute(
+            "SELECT 1 FROM availability WHERE id = ? AND tutor_id = ?",
+            (slot_id, uid),
+        ).fetchone()
+        if not slot:
+            conn.rollback()
+            return fail(404, "Availability slot not found")
+        if has_availability_overlap(conn, uid, day, start_time, end_time, slot_id):
+            conn.rollback()
+            return fail(409, "This time overlaps another slot on that day")
+        conn.execute(
+            """UPDATE availability SET day = ?, start_time = ?, end_time = ?
+               WHERE id = ? AND tutor_id = ?""",
+            (day, start_time, end_time, slot_id, uid),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return jsonify(message="Availability updated")
+
+
+@app.delete("/tutor/availability/<int:slot_id>")
+def delete_tutor_availability(slot_id):
+    uid, error = require_tutor()
+    if error:
+        return error
+    conn = get_db()
+    try:
+        cursor = conn.execute(
+            "DELETE FROM availability WHERE id = ? AND tutor_id = ?",
+            (slot_id, uid),
+        )
+        if cursor.rowcount == 0:
+            return fail(404, "Availability slot not found")
+        conn.commit()
+    finally:
+        conn.close()
+    return jsonify(message="Availability removed")
 
 
 @app.post("/logout")
