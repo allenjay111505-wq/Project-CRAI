@@ -16,4 +16,10 @@ def init_db():
     conn = get_db()
     with open(os.path.join(BASE, "schema.sql"), encoding="utf-8") as f:
         conn.executescript(f.read())
+    user_columns = {
+        row["name"] for row in conn.execute("PRAGMA table_info(users)").fetchall()
+    }
+    if "profile_photo" not in user_columns:
+        conn.execute("ALTER TABLE users ADD COLUMN profile_photo TEXT")
+        conn.commit()
     conn.close()

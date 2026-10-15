@@ -1,10 +1,12 @@
+import io
 import math
 import os
 import re
 import sqlite3
+import uuid
 from datetime import datetime, timedelta
 
-from flask import Flask, jsonify, request, session
+from flask import Flask, jsonify, request, send_file, session
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from db import get_db, init_db
@@ -12,12 +14,26 @@ from db import get_db, init_db
 app = Flask(__name__, static_folder="public", static_url_path="")
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-me")
 app.permanent_session_lifetime = timedelta(hours=2)
-app.config.update(SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE="Lax")
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    MAX_CONTENT_LENGTH=5 * 1024 * 1024 + 64 * 1024,
+    PROFILE_PHOTO_DIR=os.path.join(os.path.dirname(__file__), "uploads", "profile_photos"),
+)
 
 init_db()
 
 EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 DAYS = ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+MAX_PROFILE_PHOTO_SIZE = 5 * 1024 * 1024
+PROFILE_PHOTO_TYPES = {
+    "image/png": (".png", lambda data: data.startswith(b"\x89PNG\r\n\x1a\n")),
+    "image/jpeg": (".jpg", lambda data: data.startswith(b"\xff\xd8\xff")),
+    "image/webp": (
+        ".webp",
+        lambda data: data.startswith(b"RIFF") and data[8:12] == b"WEBP",
+    ),
+}
 
 
 def fail(code, msg):
@@ -294,7 +310,8 @@ def dashboard():
         return fail(401, "Not authenticated")
     conn = get_db()
     user = conn.execute(
-        """SELECT id, full_name, email, student_id, course, year_level, role, created_at
+        """SELECT id, full_name, email, student_id, course, year_level, role,
+                  profile_photo, created_at
            FROM users WHERE id = ?""", (uid,)).fetchone()
     if not user:
         conn.close()
@@ -309,6 +326,7 @@ def dashboard():
         (uid,),
     ).fetchall()
     user_data = dict(user)
+    user_data["has_profile_photo"] = user_data.pop("profile_photo") is not None
     user_data["subjects"] = [subject["subject_name"] for subject in subjects]
     if user["role"] in ("tutor", "both"):
         user_data.update(tutor_rate_data(conn, uid))
@@ -316,6 +334,128 @@ def dashboard():
     resp = jsonify(user_data)
     resp.headers["Cache-Control"] = "no-store"
     return resp
+
+
+@app.get("/profile/photo")
+def get_profile_photo():
+    uid = session.get("uid")
+    if not uid:
+        return fail(401, "Not authenticated")
+    conn = get_db()
+    user = conn.execute(
+        "SELECT profile_photo FROM users WHERE id = ?", (uid,)
+    ).fetchone()
+    conn.close()
+    if not user:
+        session.clear()
+        return fail(401, "Not authenticated")
+    filename = user["profile_photo"]
+    if not filename or not re.fullmatch(
+        r"[0-9a-f]{32}\.(?:png|jpg|webp)", filename
+    ):
+        return fail(404, "No profile photo has been uploaded")
+    extension = os.path.splitext(filename)[1]
+    mimetype = {".png": "image/png", ".jpg": "image/jpeg", ".webp": "image/webp"}.get(
+        extension
+    )
+    if not mimetype:
+        return fail(404, "Profile photo not found")
+    photo_path = os.path.join(app.config["PROFILE_PHOTO_DIR"], filename)
+    with open(photo_path, "rb") as stored_photo:
+        photo_contents = stored_photo.read()
+    response = send_file(
+        io.BytesIO(photo_contents),
+        mimetype=mimetype,
+        max_age=0,
+    )
+    response.headers["Cache-Control"] = "private, no-store"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    return response
+
+
+@app.post("/profile/photo")
+def upload_profile_photo():
+    uid = session.get("uid")
+    if not uid:
+        return fail(401, "Not authenticated")
+    photo = request.files.get("photo")
+    if not photo or not photo.filename:
+        return fail(400, "Choose a profile photo to upload")
+    with photo.stream as upload_stream:
+        contents = upload_stream.read(MAX_PROFILE_PHOTO_SIZE + 1)
+    if len(contents) > MAX_PROFILE_PHOTO_SIZE:
+        return fail(413, "Profile photos must be 5 MB or smaller")
+    photo_type = next(
+        (
+            (mimetype, extension)
+            for mimetype, (extension, is_valid) in PROFILE_PHOTO_TYPES.items()
+            if is_valid(contents)
+        ),
+        None,
+    )
+    if photo_type is None:
+        return fail(400, "Choose a PNG, JPEG, or WebP image")
+    mimetype, extension = photo_type
+    filename = f"{uuid.uuid4().hex}{extension}"
+    upload_dir = app.config["PROFILE_PHOTO_DIR"]
+    os.makedirs(upload_dir, exist_ok=True)
+    photo_path = os.path.join(upload_dir, filename)
+    with open(photo_path, "wb") as stored_photo:
+        stored_photo.write(contents)
+
+    conn = get_db()
+    try:
+        user = conn.execute(
+            "SELECT profile_photo FROM users WHERE id = ?", (uid,)
+        ).fetchone()
+        if not user:
+            session.clear()
+            os.remove(photo_path)
+            return fail(401, "Not authenticated")
+        old_filename = user["profile_photo"]
+        conn.execute(
+            "UPDATE users SET profile_photo = ? WHERE id = ?", (filename, uid)
+        )
+        conn.commit()
+    except sqlite3.Error:
+        conn.rollback()
+        os.remove(photo_path)
+        raise
+    finally:
+        conn.close()
+    if old_filename:
+        old_path = os.path.join(upload_dir, old_filename)
+        if os.path.isfile(old_path):
+            os.remove(old_path)
+    response = jsonify(message="Profile photo updated", mimetype=mimetype)
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+@app.delete("/profile/photo")
+def delete_profile_photo():
+    uid = session.get("uid")
+    if not uid:
+        return fail(401, "Not authenticated")
+    conn = get_db()
+    user = conn.execute(
+        "SELECT profile_photo FROM users WHERE id = ?", (uid,)
+    ).fetchone()
+    if not user:
+        conn.close()
+        session.clear()
+        return fail(401, "Not authenticated")
+    filename = user["profile_photo"]
+    conn.execute("UPDATE users SET profile_photo = NULL WHERE id = ?", (uid,))
+    conn.commit()
+    conn.close()
+    if filename:
+        photo_path = os.path.join(app.config["PROFILE_PHOTO_DIR"], filename)
+        if os.path.isfile(photo_path):
+            os.remove(photo_path)
+    response = jsonify(message="Profile photo removed")
+    response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 @app.get("/tutor/subjects")

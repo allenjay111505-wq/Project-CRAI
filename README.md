@@ -29,6 +29,8 @@ Sample logins after seeding (password `password123`): `ana@example.com` (tutor),
 | `SECRET_KEY` | `dev-secret-change-me` | Signs the session cookie. Set your own before real use |
 | `DB_FILE` | `./crai.db` | SQLite file path |
 
+Profile photos are stored locally in `uploads/profile_photos/` and excluded from Git.
+
 ## Endpoints
 
 | Method | Path | Notes |
@@ -36,6 +38,9 @@ Sample logins after seeding (password `password123`): `ana@example.com` (tutor),
 | POST | `/register` | Validates input, rejects duplicate email, stores a password hash |
 | POST | `/login` | Starts a session, or `{ "error": "Invalid email or password" }` |
 | GET | `/dashboard` | Protected; returns the logged-in user (no password hash) |
+| GET | `/profile/photo` | Returns the logged-in user's uploaded profile photo |
+| POST | `/profile/photo` | Uploads a PNG, JPEG, or WebP profile photo (up to 5 MB) |
+| DELETE | `/profile/photo` | Removes the logged-in user's photo and restores the default avatar |
 | GET | `/api/tutors?subject=<name>` | Searches tutors by subject, case-insensitively; supports `day`, `start_time`, `end_time`, `rate=free|paid`, and `sort=rate_asc|rate_desc` filters |
 | GET | `/tutor/subjects` | Lists a tutor's subjects and the shared subject catalog |
 | POST | `/tutor/subjects` | Adds a listed or newly entered subject to the logged-in tutor |
@@ -57,7 +62,9 @@ app.py          Flask API + serves the frontend
 db.py           database connection + schema setup
 seed.py         sample data
 schema.sql      tables: users, subjects, tutor_subjects, availability, tutor_rates
+                (users includes the profile-photo filename)
 public/index.html   login, register, dashboard
+public/default-avatar.svg   fallback avatar when a user has not uploaded a photo
 ```
 
 ## Out of scope (later sprints)
