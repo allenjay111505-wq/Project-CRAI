@@ -39,6 +39,10 @@ Sample logins after seeding (password `password123`): `ana@example.com` (tutor),
 | GET | `/tutor/subjects` | Lists a tutor's subjects and the shared subject catalog |
 | POST | `/tutor/subjects` | Adds a listed or newly entered subject to the logged-in tutor |
 | DELETE | `/tutor/subjects/<id>` | Removes a subject from the logged-in tutor; the last subject cannot be removed |
+| GET | `/tutor/availability` | Lists the logged-in tutor's weekly slots by day and start time |
+| POST | `/tutor/availability` | Adds a weekly slot; overlapping slots on the same day are rejected |
+| PUT | `/tutor/availability/<id>` | Edits one of the logged-in tutor's slots |
+| DELETE | `/tutor/availability/<id>` | Removes one of the logged-in tutor's slots |
 | POST | `/logout` | Ends the session |
 
 ## Structure
