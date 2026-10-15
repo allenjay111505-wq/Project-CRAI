@@ -39,6 +39,18 @@ button.ghost{background:transparent;color:var(--brand);border:1px solid var(--br
 .availability-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));align-items:end;gap:8px;margin-top:14px}
 .availability-form label{margin:0}
 .availability-form button{margin-top:8px}
+.profile-list{list-style:none;padding:0;margin:0}
+.profile-list li{padding:8px 0;border-bottom:1px solid var(--line)}
+.profile-list li:last-child{border-bottom:0}
+.tutor-results{margin-top:16px}
+.tutor-result{border:1px solid var(--line);border-radius:8px;padding:14px;margin-top:10px}
+.tutor-result h3{margin:0 0 8px}
+.tutor-search-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;align-items:end}
+.tutor-search-form label{margin:0}
+.tutor-search-form button{margin-top:8px}
+.rate-form{max-width:360px}
+.rate-form label{margin-top:10px}
+.rate-form button{margin-top:12px}
 .hide{display:none}
 .toast{color:var(--mute);font-size:.9rem;margin-top:10px}
 </style>
@@ -131,12 +143,87 @@ button.ghost{background:transparent;color:var(--brand);border:1px solid var(--br
         </div>
       </form>
       <div class="err" id="availabilityErr" role="alert"></div>
-      <div class="grid"><button class="soon">Set my rate</button></div>
+      <h3>Session rate</h3>
+      <p id="rateSummary" class="sub"></p>
+      <form id="rateForm" class="rate-form">
+        <label for="rateType">Sessions are
+          <select id="rateType">
+            <option value="free">Free</option>
+            <option value="paid">Paid</option>
+          </select>
+        </label>
+        <label id="rateAmountLabel" for="rateAmount" class="hide">Rate per hour
+          <input id="rateAmount" type="number" min="0.01" step="0.01" inputmode="decimal">
+        </label>
+        <button id="rateSave">Save rate</button>
+      </form>
+      <div class="err" id="rateErr" role="alert"></div>
     </div>
-    <div id="learnerBox" class="card hide"><h2>Learner tools</h2>
-      <div class="grid"><button class="soon">Find a tutor</button><button class="soon">List subjects I need help with</button></div></div>
+    <div id="learnerBox" class="card hide"><h2>Find a tutor</h2>
+      <form id="tutorSearchForm" class="tutor-search-form">
+        <label for="tutorSearchSubject">Search by subject
+          <input id="tutorSearchSubject" maxlength="100" autocomplete="off" required>
+        </label>
+        <label for="tutorSearchDay">Availability day
+          <select id="tutorSearchDay">
+            <option value="">Any day</option>
+            <option>Monday</option><option>Tuesday</option><option>Wednesday</option>
+            <option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option>
+          </select>
+        </label>
+        <label for="tutorSearchStart">Available from
+          <input id="tutorSearchStart" type="time">
+        </label>
+        <label for="tutorSearchEnd">Available until
+          <input id="tutorSearchEnd" type="time">
+        </label>
+        <label for="tutorSearchRate">Session rate
+          <select id="tutorSearchRate">
+            <option value="any">Any rate</option>
+            <option value="free">Free only</option>
+            <option value="paid">Paid only</option>
+          </select>
+        </label>
+        <label for="tutorSearchSort">Sort by
+          <select id="tutorSearchSort">
+            <option value="name">Name</option>
+            <option value="rate_asc">Rate: low to high</option>
+            <option value="rate_desc">Rate: high to low</option>
+          </select>
+        </label>
+        <button>Search</button>
+      </form>
+      <p id="tutorSearchStatus" class="toast" role="status">Enter a subject to find tutors.</p>
+      <div id="tutorSearchResults" class="tutor-results"></div>
+    </div>
     <div class="toast" id="soonMsg"></div>
   </div>
+</div>
+
+<!-- PUBLIC TUTOR PROFILE -->
+<div id="tutorPublicProfile" class="hide">
+  <div class="nav"><strong>C.R.A.I.</strong><a href="/">Home</a></div>
+  <main class="dash">
+    <p id="publicProfileStatus" class="toast" role="status">Loading tutor profile…</p>
+    <div id="publicProfileContent" class="hide">
+      <section class="card">
+        <h1 id="publicTutorName"></h1>
+        <p class="sub">Tutor profile</p>
+      </section>
+      <section class="card">
+        <h2>Subjects</h2>
+        <ul id="publicTutorSubjects" class="profile-list"></ul>
+      </section>
+      <section class="card">
+        <h2>Weekly availability</h2>
+        <ul id="publicTutorAvailability" class="profile-list"></ul>
+      </section>
+      <section class="card">
+        <h2>Session rate</h2>
+        <p id="publicTutorRate"></p>
+      </section>
+    </div>
+  </main>
 </div>
 
 <script>
@@ -149,22 +236,39 @@ const api = async (url, body, method = body ? 'POST' : 'GET') => {
   return { ok: r.ok, data };
 };
 const setErr = (id, msg) => { const e = document.querySelector(`[data-for="${id}"]`); if (e) e.textContent = msg || ''; };
-const show = view => { ['auth', 'dashboard'].forEach(v => $(v).classList.toggle('hide', v !== view)); };
+const show = view => { ['auth', 'dashboard', 'tutorPublicProfile'].forEach(v => $(v).classList.toggle('hide', v !== view)); };
 const swap = reg => { $('loginForm').classList.toggle('hide', reg); $('regForm').classList.toggle('hide', !reg); };
 let editingAvailabilityId = null;
 
 async function route() {
+  const publicProfileMatch = window.location.pathname.match(/^\/tutors\/(\d+)\/?$/);
+  if (publicProfileMatch) {
+    await loadPublicTutorProfile(publicProfileMatch[1]);
+    return;
+  }
   const { ok, data } = await api('/dashboard');
   if (!ok) { show('auth'); return; }
   $('welcome').textContent = 'Welcome, ' + data.full_name + '!';
   $('roleLine').textContent = 'Role: ' + data.role;
   const subjectLine = data.subjects.length ? `<br>Subjects: ${data.subjects.map(esc).join(', ')}` : '';
-  $('profile').innerHTML = `<p>Email: ${esc(data.email)}<br>Student ID: ${esc(data.student_id)}<br>Course: ${esc(data.course)}, Year ${data.year_level}${subjectLine}</p>`;
+  const rateLine = data.role !== 'learner'
+    ? `<br>Session rate: ${data.is_free ? 'Free' : `${data.rate_per_hour} per hour`}`
+    : '';
+  const tutorProfileLink = data.role !== 'learner'
+    ? `<br><a href="/tutors/${data.id}">View public tutor profile</a>`
+    : '';
+  $('profile').innerHTML = `<p>Email: ${esc(data.email)}<br>Student ID: ${esc(data.student_id)}<br>Course: ${esc(data.course)}, Year ${data.year_level}${subjectLine}${rateLine}${tutorProfileLink}</p>`;
   $('tutorBox').classList.toggle('hide', data.role === 'learner');
   $('learnerBox').classList.toggle('hide', data.role === 'tutor');
   if (data.role !== 'learner') {
     const { ok: subjectsOk, data: subjectsData } = await api('/tutor/subjects');
     if (subjectsOk) renderTutorSubjects(subjectsData.subjects, subjectsData.available_subjects);
+    $('rateSummary').textContent = data.is_free
+      ? 'Sessions are free.'
+      : `Rate: ${data.rate_per_hour} per hour.`;
+    $('rateType').value = data.is_free ? 'free' : 'paid';
+    $('rateAmount').value = data.rate_per_hour ?? '';
+    $('rateAmountLabel').classList.toggle('hide', data.is_free);
     const { ok: availabilityOk, data: availabilityData } = await api('/tutor/availability');
     if (availabilityOk) renderAvailability(availabilityData.availability);
   }
@@ -212,6 +316,49 @@ $('tutorSubjectForm').onsubmit = async e => {
   if (ok) { $('tutorSubjectForm').reset(); await route(); }
   else $('tutorSubjectErr').textContent = data.error || 'Could not add subject';
 };
+
+async function loadPublicTutorProfile(tutorId) {
+  show('tutorPublicProfile');
+  $('publicProfileContent').classList.add('hide');
+  $('publicProfileStatus').textContent = 'Loading tutor profile…';
+  const { ok, data } = await api(`/api/tutors/${tutorId}`);
+  if (!ok) {
+    $('publicProfileStatus').textContent = data.error || 'Tutor profile could not be found.';
+    return;
+  }
+  $('publicProfileStatus').textContent = '';
+  $('publicProfileContent').classList.remove('hide');
+  $('publicTutorName').textContent = data.full_name;
+  const subjects = $('publicTutorSubjects');
+  subjects.replaceChildren();
+  if (data.subjects.length) {
+    data.subjects.forEach(subject => {
+      const item = document.createElement('li');
+      item.textContent = subject;
+      subjects.append(item);
+    });
+  } else {
+    const item = document.createElement('li');
+    item.textContent = 'Not available yet.';
+    subjects.append(item);
+  }
+  const availability = $('publicTutorAvailability');
+  availability.replaceChildren();
+  if (data.availability.length) {
+    data.availability.forEach(slot => {
+      const item = document.createElement('li');
+      item.textContent = `${slot.day}: ${slot.start_time}–${slot.end_time}`;
+      availability.append(item);
+    });
+  } else {
+    const item = document.createElement('li');
+    item.textContent = 'Not available yet.';
+    availability.append(item);
+  }
+  $('publicTutorRate').textContent = data.is_free
+    ? 'Free'
+    : `${data.rate_per_hour} per hour`;
+}
 
 function resetAvailabilityForm() {
   editingAvailabilityId = null;
@@ -277,6 +424,88 @@ $('availabilityForm').onsubmit = async e => {
 };
 
 $('availabilityCancel').onclick = resetAvailabilityForm;
+
+$('tutorSearchForm').onsubmit = async e => {
+  e.preventDefault();
+  const subject = $('tutorSearchSubject').value.trim();
+  const results = $('tutorSearchResults');
+  results.replaceChildren();
+  if (!subject) {
+    $('tutorSearchStatus').textContent = 'Enter a subject to find tutors.';
+    return;
+  }
+  const day = $('tutorSearchDay').value;
+  const startTime = $('tutorSearchStart').value;
+  const endTime = $('tutorSearchEnd').value;
+  if ((day && (!startTime || !endTime)) || (!day && (startTime || endTime))) {
+    $('tutorSearchStatus').textContent = 'Choose a day and enter both times to filter availability.';
+    return;
+  }
+  if (startTime && endTime && startTime >= endTime) {
+    $('tutorSearchStatus').textContent = 'The end time must be later than the start time.';
+    return;
+  }
+  $('tutorSearchStatus').textContent = 'Searching…';
+  const params = new URLSearchParams({
+    subject,
+    rate: $('tutorSearchRate').value,
+    sort: $('tutorSearchSort').value
+  });
+  if (day) {
+    params.set('day', day);
+    params.set('start_time', startTime);
+    params.set('end_time', endTime);
+  }
+  const { ok, data } = await api(`/api/tutors?${params}`);
+  if (!ok) {
+    $('tutorSearchStatus').textContent = data.error || 'Tutor search failed.';
+    return;
+  }
+  if (!data.tutors.length) {
+    $('tutorSearchStatus').textContent = `No tutors found for "${subject}".`;
+    return;
+  }
+  $('tutorSearchStatus').textContent = `${data.tutors.length} tutor${data.tutors.length === 1 ? '' : 's'} found.`;
+  data.tutors.forEach(tutor => {
+    const card = document.createElement('article');
+    card.className = 'tutor-result';
+    const name = document.createElement('h3');
+    name.textContent = tutor.full_name;
+    const subjects = document.createElement('p');
+    subjects.textContent = `Subjects: ${tutor.subjects.join(', ')}`;
+    const rate = document.createElement('p');
+    rate.textContent = tutor.is_free ? 'Free sessions' : `Rate: ${tutor.rate_per_hour} per hour`;
+    const profile = document.createElement('a');
+    profile.href = `/tutors/${tutor.id}`;
+    profile.textContent = 'View tutor profile';
+    card.append(name, subjects, rate, profile);
+    results.append(card);
+  });
+};
+
+$('rateType').onchange = () => {
+  const isFree = $('rateType').value === 'free';
+  $('rateAmountLabel').classList.toggle('hide', isFree);
+  if (isFree) $('rateAmount').value = '';
+  $('rateErr').textContent = '';
+};
+
+$('rateForm').onsubmit = async e => {
+  e.preventDefault();
+  $('rateErr').textContent = '';
+  const isFree = $('rateType').value === 'free';
+  const amount = $('rateAmount').value;
+  if (!isFree && (!amount || !Number.isFinite(Number(amount)) || Number(amount) <= 0)) {
+    $('rateErr').textContent = 'Enter a numeric rate greater than 0';
+    return;
+  }
+  const body = isFree
+    ? { is_free: true }
+    : { is_free: false, rate_per_hour: Number(amount) };
+  const { ok, data } = await api('/tutor/rate', body, 'PUT');
+  if (ok) await route();
+  else $('rateErr').textContent = data.error || 'Could not save session rate';
+};
 
 $('toReg').onclick = () => swap(true);
 $('toLogin').onclick = () => swap(false);

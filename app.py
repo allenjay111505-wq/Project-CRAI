@@ -1,3 +1,4 @@
+import math
 import os
 import re
 import sqlite3
@@ -70,9 +71,166 @@ def has_availability_overlap(conn, uid, day, start_time, end_time, exclude_id=No
     return conn.execute(query, params).fetchone() is not None
 
 
+def tutor_rate_data(conn, uid):
+    row = conn.execute(
+        "SELECT rate_per_hour FROM tutor_rates WHERE tutor_id = ?",
+        (uid,),
+    ).fetchone()
+    rate = row["rate_per_hour"] if row else None
+    return {"is_free": rate is None, "rate_per_hour": rate}
+
+
 @app.get("/")
 def index():
     return app.send_static_file("index.html")
+
+
+@app.get("/tutors/<int:tutor_id>")
+def public_tutor_profile_page(tutor_id):
+    return app.send_static_file("index.html")
+
+
+@app.get("/api/tutors")
+def search_tutors():
+    subject_name = request.args.get("subject", "").strip()
+    if not subject_name:
+        return fail(400, "Enter a subject to search")
+
+    day = request.args.get("day", "").strip()
+    start_time = request.args.get("start_time", "").strip()
+    end_time = request.args.get("end_time", "").strip()
+    if day:
+        day = next((value for value in DAYS if value.casefold() == day.casefold()), None)
+        if day is None:
+            return fail(400, "Select a valid day of the week")
+        if not start_time or not end_time:
+            return fail(400, "Enter both start and end times for availability")
+        parsed, error = parse_availability(
+            {"day": day, "start_time": start_time, "end_time": end_time}
+        )
+        if error:
+            return fail(400, error)
+        day, start_time, end_time = parsed
+    elif start_time or end_time:
+        return fail(400, "Select a day when filtering by time")
+
+    rate_filter = request.args.get("rate", "any").strip().casefold()
+    if rate_filter not in ("any", "free", "paid"):
+        return fail(400, "Select a valid rate filter")
+    sort_order = request.args.get("sort", "name").strip().casefold()
+    if sort_order not in ("name", "rate_asc", "rate_desc"):
+        return fail(400, "Select a valid sort order")
+
+    filters = [
+        "users.role IN ('tutor', 'both')",
+        """EXISTS (
+               SELECT 1 FROM tutor_subjects AS matching_tutor_subjects
+               JOIN subjects AS matching_subjects
+                 ON matching_subjects.id = matching_tutor_subjects.subject_id
+               WHERE matching_tutor_subjects.tutor_id = users.id
+                 AND matching_subjects.subject_name = ? COLLATE NOCASE
+           )""",
+    ]
+    params = [subject_name]
+    if day:
+        filters.append(
+            """EXISTS (
+                   SELECT 1 FROM availability AS matching_availability
+                   WHERE matching_availability.tutor_id = users.id
+                     AND matching_availability.day = ?
+                     AND matching_availability.start_time <= ?
+                     AND matching_availability.end_time >= ?
+               )"""
+        )
+        params.extend((day, start_time, end_time))
+    if rate_filter == "free":
+        filters.append(
+            "(tutor_rates.rate_per_hour IS NULL OR tutor_rates.tutor_id IS NULL)"
+        )
+    elif rate_filter == "paid":
+        filters.append("tutor_rates.rate_per_hour IS NOT NULL")
+    if sort_order == "rate_asc":
+        order_by = (
+            "CASE WHEN tutor_rates.rate_per_hour IS NULL THEN 0 ELSE 1 END, "
+            "tutor_rates.rate_per_hour ASC, users.full_name COLLATE NOCASE"
+        )
+    elif sort_order == "rate_desc":
+        order_by = (
+            "CASE WHEN tutor_rates.rate_per_hour IS NULL THEN 1 ELSE 0 END, "
+            "tutor_rates.rate_per_hour DESC, users.full_name COLLATE NOCASE"
+        )
+    else:
+        order_by = "users.full_name COLLATE NOCASE"
+
+    conn = get_db()
+    rows = conn.execute(
+        """SELECT users.id, users.full_name, subjects.subject_name,
+                  tutor_rates.rate_per_hour
+           FROM users
+           JOIN tutor_subjects ON tutor_subjects.tutor_id = users.id
+           JOIN subjects ON subjects.id = tutor_subjects.subject_id
+           LEFT JOIN tutor_rates ON tutor_rates.tutor_id = users.id
+           WHERE """ + " AND ".join(filters) + """
+           ORDER BY """ + order_by + """, subjects.subject_name COLLATE NOCASE""",
+        params,
+    ).fetchall()
+    conn.close()
+
+    tutors = {}
+    for row in rows:
+        tutor = tutors.setdefault(
+            row["id"],
+            {
+                "id": row["id"],
+                "full_name": row["full_name"],
+                "subjects": [],
+                "is_free": row["rate_per_hour"] is None,
+                "rate_per_hour": row["rate_per_hour"],
+            },
+        )
+        tutor["subjects"].append(row["subject_name"])
+    response = jsonify(tutors=list(tutors.values()))
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+@app.get("/api/tutors/<int:tutor_id>")
+def public_tutor_profile(tutor_id):
+    conn = get_db()
+    tutor = conn.execute(
+        """SELECT id, full_name FROM users
+           WHERE id = ? AND role IN ('tutor', 'both')""",
+        (tutor_id,),
+    ).fetchone()
+    if not tutor:
+        conn.close()
+        return fail(404, "Tutor profile not found")
+    subjects = conn.execute(
+        """SELECT subjects.subject_name
+           FROM tutor_subjects
+           JOIN subjects ON subjects.id = tutor_subjects.subject_id
+           WHERE tutor_subjects.tutor_id = ?
+           ORDER BY subjects.subject_name COLLATE NOCASE""",
+        (tutor_id,),
+    ).fetchall()
+    availability = conn.execute(
+        """SELECT id, day, start_time, end_time FROM availability
+           WHERE tutor_id = ?
+           ORDER BY CASE day
+               WHEN 'Monday' THEN 1 WHEN 'Tuesday' THEN 2
+               WHEN 'Wednesday' THEN 3 WHEN 'Thursday' THEN 4
+               WHEN 'Friday' THEN 5 WHEN 'Saturday' THEN 6
+               WHEN 'Sunday' THEN 7 ELSE 8 END, start_time""",
+        (tutor_id,),
+    ).fetchall()
+    profile = dict(tutor)
+    profile["subjects"] = [row["subject_name"] for row in subjects]
+    profile["availability"] = [dict(slot) for slot in availability]
+    profile.update(tutor_rate_data(conn, tutor_id))
+    conn.close()
+    response = jsonify(profile)
+    response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 @app.post("/register")
@@ -150,9 +308,11 @@ def dashboard():
            ORDER BY subjects.subject_name COLLATE NOCASE""",
         (uid,),
     ).fetchall()
-    conn.close()
     user_data = dict(user)
     user_data["subjects"] = [subject["subject_name"] for subject in subjects]
+    if user["role"] in ("tutor", "both"):
+        user_data.update(tutor_rate_data(conn, uid))
+    conn.close()
     resp = jsonify(user_data)
     resp.headers["Cache-Control"] = "no-store"
     return resp
@@ -181,6 +341,17 @@ def tutor_subjects():
         subjects=[dict(subject) for subject in assigned],
         available_subjects=[dict(subject) for subject in available],
     )
+
+
+@app.get("/tutor/rate")
+def get_tutor_rate():
+    uid, error = require_tutor()
+    if error:
+        return error
+    conn = get_db()
+    rate = tutor_rate_data(conn, uid)
+    conn.close()
+    return jsonify(rate)
 
 
 @app.post("/tutor/subjects")
@@ -259,6 +430,36 @@ def remove_tutor_subject(subject_id):
     finally:
         conn.close()
     return jsonify(message="Subject removed")
+
+
+@app.put("/tutor/rate")
+def update_tutor_rate():
+    uid, error = require_tutor()
+    if error:
+        return error
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict) or type(data.get("is_free")) is not bool:
+        return fail(400, "Choose whether your sessions are free or paid")
+    rate = None
+    if not data["is_free"]:
+        value = data.get("rate_per_hour")
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            return fail(400, "Enter a numeric rate greater than 0")
+        if not math.isfinite(value) or value <= 0:
+            return fail(400, "Enter a numeric rate greater than 0")
+        rate = value
+
+    conn = get_db()
+    try:
+        conn.execute(
+            """INSERT INTO tutor_rates (tutor_id, rate_per_hour) VALUES (?, ?)
+               ON CONFLICT(tutor_id) DO UPDATE SET rate_per_hour = excluded.rate_per_hour""",
+            (uid, rate),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return jsonify(message="Session rate saved", is_free=rate is None, rate_per_hour=rate)
 
 
 @app.get("/tutor/availability")

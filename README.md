@@ -36,9 +36,14 @@ Sample logins after seeding (password `password123`): `ana@example.com` (tutor),
 | POST | `/register` | Validates input, rejects duplicate email, stores a password hash |
 | POST | `/login` | Starts a session, or `{ "error": "Invalid email or password" }` |
 | GET | `/dashboard` | Protected; returns the logged-in user (no password hash) |
+| GET | `/api/tutors?subject=<name>` | Searches tutors by subject, case-insensitively; supports `day`, `start_time`, `end_time`, `rate=free|paid`, and `sort=rate_asc|rate_desc` filters |
 | GET | `/tutor/subjects` | Lists a tutor's subjects and the shared subject catalog |
 | POST | `/tutor/subjects` | Adds a listed or newly entered subject to the logged-in tutor |
 | DELETE | `/tutor/subjects/<id>` | Removes a subject from the logged-in tutor; the last subject cannot be removed |
+| GET | `/tutors/<id>` | Public-facing tutor profile page |
+| GET | `/api/tutors/<id>` | Public tutor name, subjects, weekly availability, and session rate |
+| GET | `/tutor/rate` | Returns whether the logged-in tutor offers free sessions or their hourly rate |
+| PUT | `/tutor/rate` | Saves `{ "is_free": true }` or `{ "is_free": false, "rate_per_hour": 25 }` |
 | GET | `/tutor/availability` | Lists the logged-in tutor's weekly slots by day and start time |
 | POST | `/tutor/availability` | Adds a weekly slot; overlapping slots on the same day are rejected |
 | PUT | `/tutor/availability/<id>` | Edits one of the logged-in tutor's slots |
