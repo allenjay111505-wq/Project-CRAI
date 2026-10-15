@@ -118,6 +118,44 @@ class TutorSearchTestCase(unittest.TestCase):
         self.assertTrue(all(tutor["is_free"] for tutor in tutors))
         self.assertTrue(all(tutor["rate_per_hour"] is None for tutor in tutors))
 
+    def test_ticket_search_route_supports_day_and_boolean_free_filter(self):
+        free_monday = self.create_user(
+            "Free Monday Tutor", "free-monday@example.com", "tutor"
+        )
+        paid_monday = self.create_user(
+            "Paid Monday Tutor", "paid-monday@example.com", "tutor"
+        )
+        free_tuesday = self.create_user(
+            "Free Tuesday Tutor", "free-tuesday@example.com", "tutor"
+        )
+        for tutor_id in (free_monday, paid_monday, free_tuesday):
+            self.add_subject(tutor_id, "Calculus")
+        self.set_rate(paid_monday, 20)
+        self.add_availability(free_monday, "Monday", "09:00", "10:00")
+        self.add_availability(paid_monday, "Monday", "11:00", "12:00")
+        self.add_availability(free_tuesday, "Tuesday", "09:00", "10:00")
+
+        response = self.client.get(
+            "/tutors/search?subject=calculus&day=monday&free=true&sort=name"
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            [tutor["id"] for tutor in response.get_json()["tutors"]], [free_monday]
+        )
+
+        response = self.client.get(
+            "/tutors/search?subject=Calculus&day=MONDAY&free=false"
+        )
+        self.assertEqual(
+            [tutor["id"] for tutor in response.get_json()["tutors"]], [paid_monday]
+        )
+
+    def test_ticket_search_route_rejects_invalid_free_filter(self):
+        response = self.client.get(
+            "/tutors/search?subject=Calculus&free=sometimes"
+        )
+        self.assertEqual(response.status_code, 400)
+
     def test_no_matching_tutors_returns_empty_list(self):
         response = self.client.get("/api/tutors?subject=Chemistry")
         self.assertEqual(response.status_code, 200)

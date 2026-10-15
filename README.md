@@ -41,9 +41,12 @@ Profile photos are stored locally in `uploads/profile_photos/` and excluded from
 | GET | `/profile/photo` | Returns the logged-in user's uploaded profile photo |
 | POST | `/profile/photo` | Uploads a PNG, JPEG, or WebP profile photo (up to 5 MB) |
 | DELETE | `/profile/photo` | Removes the logged-in user's photo and restores the default avatar |
-| GET | `/api/tutors?subject=<name>` | Searches tutors by subject, case-insensitively; supports `day`, `start_time`, `end_time`, `rate=free|paid`, and `sort=rate_asc|rate_desc` filters |
+| GET | `/tutors/search?subject=<name>` | Ticket search route; supports case-insensitive subject, `day`, optional paired `start_time`/`end_time`, `free=true|false`, and `sort=name|rate_asc|rate_desc` filters |
+| GET | `/api/tutors?subject=<name>` | Backward-compatible alias for tutor search; also supports `rate=free|paid` |
 | GET | `/tutor/subjects` | Lists a tutor's subjects and the shared subject catalog |
 | POST | `/tutor/subjects` | Adds a listed or newly entered subject to the logged-in tutor |
+| PUT | `/tutor/subjects` | Replaces one assigned subject using `{ "subject_id": 1, "subject_name": "Biology" }` |
+| DELETE | `/tutor/subjects` | Removes an assigned subject using `{ "subject_id": 1 }`; the last subject cannot be removed |
 | DELETE | `/tutor/subjects/<id>` | Removes a subject from the logged-in tutor; the last subject cannot be removed |
 | GET | `/tutors/<id>` | Public-facing tutor profile page |
 | GET | `/api/tutors/<id>` | Public tutor name, subjects, weekly availability, and session rate |
@@ -51,6 +54,8 @@ Profile photos are stored locally in `uploads/profile_photos/` and excluded from
 | PUT | `/tutor/rate` | Saves `{ "is_free": true }` or `{ "is_free": false, "rate_per_hour": 25 }` |
 | GET | `/tutor/availability` | Lists the logged-in tutor's weekly slots by day and start time |
 | POST | `/tutor/availability` | Adds a weekly slot; overlapping slots on the same day are rejected |
+| PUT | `/tutor/availability` | Edits a slot using `{ "slot_id": 1, "day": "Monday", "start_time": "09:00", "end_time": "10:00" }` |
+| DELETE | `/tutor/availability` | Removes a slot using `{ "slot_id": 1 }` |
 | PUT | `/tutor/availability/<id>` | Edits one of the logged-in tutor's slots |
 | DELETE | `/tutor/availability/<id>` | Removes one of the logged-in tutor's slots |
 | POST | `/logout` | Ends the session |

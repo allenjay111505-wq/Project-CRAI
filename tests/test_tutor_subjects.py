@@ -50,6 +50,17 @@ class TutorSubjectsTestCase(unittest.TestCase):
             ).status_code,
             401,
         )
+        self.assertEqual(
+            self.client.put(
+                "/tutor/subjects",
+                json={"subject_id": 1, "subject_name": "Biology"},
+            ).status_code,
+            401,
+        )
+        self.assertEqual(
+            self.client.delete("/tutor/subjects", json={"subject_id": 1}).status_code,
+            401,
+        )
 
     def test_learners_cannot_manage_tutor_subjects(self):
         self.create_user("learner")
@@ -58,6 +69,17 @@ class TutorSubjectsTestCase(unittest.TestCase):
             self.client.post(
                 "/tutor/subjects", json={"subject_name": "Biology"}
             ).status_code,
+            403,
+        )
+        self.assertEqual(
+            self.client.put(
+                "/tutor/subjects",
+                json={"subject_id": 1, "subject_name": "Biology"},
+            ).status_code,
+            403,
+        )
+        self.assertEqual(
+            self.client.delete("/tutor/subjects", json={"subject_id": 1}).status_code,
             403,
         )
 
@@ -107,6 +129,68 @@ class TutorSubjectsTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(
             len(self.client.get("/dashboard").get_json()["subjects"]), 1
+        )
+
+    def test_updates_and_deletes_subjects_using_collection_routes(self):
+        self.create_user()
+        self.client.post("/tutor/subjects", json={"subject_name": "Algebra"})
+        subjects = self.client.get("/tutor/subjects").get_json()["subjects"]
+        subject_id = subjects[0]["id"]
+
+        response = self.client.put(
+            "/tutor/subjects",
+            json={"subject_id": subject_id, "subject_name": "Linear Algebra"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            self.client.get("/dashboard").get_json()["subjects"], ["Linear Algebra"]
+        )
+
+        self.client.post("/tutor/subjects", json={"subject_name": "Geometry"})
+        subjects = self.client.get("/tutor/subjects").get_json()["subjects"]
+        subject_id = next(
+            subject["id"]
+            for subject in subjects
+            if subject["subject_name"] == "Linear Algebra"
+        )
+        response = self.client.delete(
+            "/tutor/subjects", json={"subject_id": subject_id}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            self.client.get("/dashboard").get_json()["subjects"], ["Geometry"]
+        )
+
+    def test_subject_update_and_collection_delete_validate_input_and_ownership(self):
+        self.create_user()
+        for payload in ([], {"subject_name": 123}, {"subject_name": " "}):
+            self.assertEqual(
+                self.client.post("/tutor/subjects", json=payload).status_code, 400
+            )
+        for payload in (
+            [],
+            {},
+            {"subject_id": True, "subject_name": "Biology"},
+            {"subject_id": 1, "subject_name": " "},
+            {"subject_id": 1, "subject_name": "x" * 101},
+        ):
+            self.assertEqual(
+                self.client.put("/tutor/subjects", json=payload).status_code, 400
+            )
+        self.assertEqual(
+            self.client.delete("/tutor/subjects", json=[]).status_code, 400
+        )
+        self.assertEqual(
+            self.client.delete(
+                "/tutor/subjects", json={"subject_id": "1"}
+            ).status_code,
+            400,
+        )
+        self.assertEqual(
+            self.client.delete(
+                "/tutor/subjects", json={"subject_id": 999}
+            ).status_code,
+            404,
         )
 
 

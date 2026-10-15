@@ -106,6 +106,7 @@ def public_tutor_profile_page(tutor_id):
     return app.send_static_file("index.html")
 
 
+@app.get("/tutors/search")
 @app.get("/api/tutors")
 def search_tutors():
     subject_name = request.args.get("subject", "").strip()
@@ -119,18 +120,31 @@ def search_tutors():
         day = next((value for value in DAYS if value.casefold() == day.casefold()), None)
         if day is None:
             return fail(400, "Select a valid day of the week")
-        if not start_time or not end_time:
+        if bool(start_time) != bool(end_time):
             return fail(400, "Enter both start and end times for availability")
-        parsed, error = parse_availability(
-            {"day": day, "start_time": start_time, "end_time": end_time}
-        )
-        if error:
-            return fail(400, error)
-        day, start_time, end_time = parsed
+        if start_time:
+            parsed, error = parse_availability(
+                {"day": day, "start_time": start_time, "end_time": end_time}
+            )
+            if error:
+                return fail(400, error)
+            day, start_time, end_time = parsed
     elif start_time or end_time:
         return fail(400, "Select a day when filtering by time")
 
     rate_filter = request.args.get("rate", "any").strip().casefold()
+    free_filter = request.args.get("free")
+    if free_filter is not None and free_filter.strip():
+        free_value = free_filter.strip().casefold()
+        if free_value in ("true", "1", "yes", "free"):
+            free_rate_filter = "free"
+        elif free_value in ("false", "0", "no", "paid"):
+            free_rate_filter = "paid"
+        else:
+            return fail(400, "Select a valid free filter")
+        if rate_filter != "any" and rate_filter != free_rate_filter:
+            return fail(400, "Free and rate filters must agree")
+        rate_filter = free_rate_filter
     if rate_filter not in ("any", "free", "paid"):
         return fail(400, "Select a valid rate filter")
     sort_order = request.args.get("sort", "name").strip().casefold()
@@ -149,16 +163,17 @@ def search_tutors():
     ]
     params = [subject_name]
     if day:
-        filters.append(
-            """EXISTS (
-                   SELECT 1 FROM availability AS matching_availability
-                   WHERE matching_availability.tutor_id = users.id
-                     AND matching_availability.day = ?
-                     AND matching_availability.start_time <= ?
-                     AND matching_availability.end_time >= ?
-               )"""
-        )
-        params.extend((day, start_time, end_time))
+        availability_filter = """EXISTS (
+               SELECT 1 FROM availability AS matching_availability
+               WHERE matching_availability.tutor_id = users.id
+                 AND matching_availability.day = ?"""
+        params.append(day)
+        if start_time:
+            availability_filter += """
+                 AND matching_availability.start_time <= ?
+                 AND matching_availability.end_time >= ?"""
+            params.extend((start_time, end_time))
+        filters.append(availability_filter + ")")
     if rate_filter == "free":
         filters.append(
             "(tutor_rates.rate_per_hour IS NULL OR tutor_rates.tutor_id IS NULL)"
@@ -499,10 +514,13 @@ def add_tutor_subject():
     uid, error = require_tutor()
     if error:
         return error
-    data = request.get_json(silent=True) or {}
-    subject_name = str(data.get("subject_name", "")).strip()
-    if not subject_name:
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return fail(400, "Subject must be a JSON object")
+    subject_name = data.get("subject_name")
+    if not isinstance(subject_name, str) or not subject_name.strip():
         return fail(400, "Subject name is required")
+    subject_name = subject_name.strip()
     if len(subject_name) > 100:
         return fail(400, "Subject name must be 100 characters or fewer")
 
@@ -539,11 +557,79 @@ def add_tutor_subject():
     return jsonify(message="Subject added"), 201
 
 
-@app.delete("/tutor/subjects/<int:subject_id>")
-def remove_tutor_subject(subject_id):
+@app.put("/tutor/subjects")
+def update_tutor_subject():
     uid, error = require_tutor()
     if error:
         return error
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return fail(400, "Subject update must be a JSON object")
+    subject_id = data.get("subject_id")
+    subject_name = data.get("subject_name")
+    if isinstance(subject_id, bool) or not isinstance(subject_id, int) or subject_id < 1:
+        return fail(400, "A valid subject_id is required")
+    if not isinstance(subject_name, str) or not subject_name.strip():
+        return fail(400, "Subject name is required")
+    subject_name = subject_name.strip()
+    if len(subject_name) > 100:
+        return fail(400, "Subject name must be 100 characters or fewer")
+
+    conn = get_db()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        assignment = conn.execute(
+            """SELECT 1 FROM tutor_subjects
+               WHERE tutor_id = ? AND subject_id = ?""",
+            (uid, subject_id),
+        ).fetchone()
+        if not assignment:
+            conn.rollback()
+            return fail(404, "Subject not found in your profile")
+        subject = conn.execute(
+            "SELECT id FROM subjects WHERE subject_name = ? COLLATE NOCASE",
+            (subject_name,),
+        ).fetchone()
+        if subject:
+            replacement_id = subject["id"]
+        else:
+            replacement_id = conn.execute(
+                "INSERT INTO subjects (subject_name) VALUES (?)",
+                (subject_name,),
+            ).lastrowid
+        if replacement_id != subject_id:
+            existing_assignment = conn.execute(
+                """SELECT 1 FROM tutor_subjects
+                   WHERE tutor_id = ? AND subject_id = ?""",
+                (uid, replacement_id),
+            ).fetchone()
+            if existing_assignment:
+                conn.rollback()
+                return fail(409, "Subject is already on your profile")
+            conn.execute(
+                """UPDATE tutor_subjects SET subject_id = ?
+                   WHERE tutor_id = ? AND subject_id = ?""",
+                (replacement_id, uid, subject_id),
+            )
+        conn.commit()
+    finally:
+        conn.close()
+    return jsonify(message="Subject updated")
+
+
+@app.delete("/tutor/subjects")
+@app.delete("/tutor/subjects/<int:subject_id>")
+def remove_tutor_subject(subject_id=None):
+    uid, error = require_tutor()
+    if error:
+        return error
+    if subject_id is None:
+        data = request.get_json(silent=True)
+        if not isinstance(data, dict):
+            return fail(400, "A subject_id is required")
+        subject_id = data.get("subject_id")
+        if isinstance(subject_id, bool) or not isinstance(subject_id, int) or subject_id < 1:
+            return fail(400, "A valid subject_id is required")
     conn = get_db()
     try:
         conn.execute("BEGIN IMMEDIATE")
@@ -648,12 +734,20 @@ def add_tutor_availability():
     return jsonify(message="Availability added"), 201
 
 
+@app.put("/tutor/availability")
 @app.put("/tutor/availability/<int:slot_id>")
-def update_tutor_availability(slot_id):
+def update_tutor_availability(slot_id=None):
     uid, error = require_tutor()
     if error:
         return error
-    parsed, error = parse_availability(request.get_json(silent=True) or {})
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return fail(400, "Availability update must be a JSON object")
+    if slot_id is None:
+        slot_id = data.get("slot_id")
+        if isinstance(slot_id, bool) or not isinstance(slot_id, int) or slot_id < 1:
+            return fail(400, "A valid slot_id is required")
+    parsed, error = parse_availability(data)
     if error:
         return fail(400, error)
     day, start_time, end_time = parsed
@@ -681,11 +775,19 @@ def update_tutor_availability(slot_id):
     return jsonify(message="Availability updated")
 
 
+@app.delete("/tutor/availability")
 @app.delete("/tutor/availability/<int:slot_id>")
-def delete_tutor_availability(slot_id):
+def delete_tutor_availability(slot_id=None):
     uid, error = require_tutor()
     if error:
         return error
+    if slot_id is None:
+        data = request.get_json(silent=True)
+        if not isinstance(data, dict):
+            return fail(400, "A slot_id is required")
+        slot_id = data.get("slot_id")
+        if isinstance(slot_id, bool) or not isinstance(slot_id, int) or slot_id < 1:
+            return fail(400, "A valid slot_id is required")
     conn = get_db()
     try:
         cursor = conn.execute(

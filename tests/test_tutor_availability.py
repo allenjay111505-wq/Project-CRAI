@@ -53,12 +53,44 @@ class TutorAvailabilityTestCase(unittest.TestCase):
         self.assertEqual(
             self.add_slot("Monday", "09:00", "10:00").status_code, 401
         )
+        self.assertEqual(
+            self.client.put(
+                "/tutor/availability",
+                json={
+                    "slot_id": 1,
+                    "day": "Monday",
+                    "start_time": "09:00",
+                    "end_time": "10:00",
+                },
+            ).status_code,
+            401,
+        )
+        self.assertEqual(
+            self.client.delete("/tutor/availability", json={"slot_id": 1}).status_code,
+            401,
+        )
 
     def test_learners_cannot_manage_availability(self):
         self.create_user("learner")
         self.assertEqual(self.client.get("/tutor/availability").status_code, 403)
         self.assertEqual(
             self.add_slot("Monday", "09:00", "10:00").status_code, 403
+        )
+        self.assertEqual(
+            self.client.put(
+                "/tutor/availability",
+                json={
+                    "slot_id": 1,
+                    "day": "Monday",
+                    "start_time": "09:00",
+                    "end_time": "10:00",
+                },
+            ).status_code,
+            403,
+        )
+        self.assertEqual(
+            self.client.delete("/tutor/availability", json={"slot_id": 1}).status_code,
+            403,
         )
 
     def test_adds_slots_and_rejects_overlap_but_allows_adjacent_slots(self):
@@ -144,6 +176,56 @@ class TutorAvailabilityTestCase(unittest.TestCase):
         )
         self.assertEqual(
             self.client.delete(f"/tutor/availability/{slot_id}").status_code, 200
+        )
+        self.assertEqual(
+            self.client.get("/tutor/availability").get_json()["availability"], []
+        )
+
+    def test_collection_routes_update_and_delete_slots_with_validation(self):
+        self.create_user()
+        self.add_slot("Friday", "15:00", "16:00")
+        slot_id = self.client.get("/tutor/availability").get_json()["availability"][0]["id"]
+        response = self.client.put(
+            "/tutor/availability",
+            json={
+                "slot_id": slot_id,
+                "day": "Saturday",
+                "start_time": "10:00",
+                "end_time": "11:00",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        slots = self.client.get("/tutor/availability").get_json()["availability"]
+        self.assertEqual(slots[0]["day"], "Saturday")
+
+        self.assertEqual(
+            self.client.put(
+                "/tutor/availability",
+                json={
+                    "slot_id": True,
+                    "day": "Saturday",
+                    "start_time": "10:00",
+                    "end_time": "11:00",
+                },
+            ).status_code,
+            400,
+        )
+        self.assertEqual(
+            self.client.put("/tutor/availability", json=[]).status_code, 400
+        )
+        self.assertEqual(
+            self.client.delete("/tutor/availability", json={"slot_id": "1"}).status_code,
+            400,
+        )
+        self.assertEqual(
+            self.client.delete("/tutor/availability", json={"slot_id": 999}).status_code,
+            404,
+        )
+        self.assertEqual(
+            self.client.delete(
+                "/tutor/availability", json={"slot_id": slot_id}
+            ).status_code,
+            200,
         )
         self.assertEqual(
             self.client.get("/tutor/availability").get_json()["availability"], []
