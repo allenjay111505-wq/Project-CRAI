@@ -285,6 +285,11 @@ input[type="checkbox"]{width:18px;min-height:18px;accent-color:var(--blue)}
 .empty-state strong{display:block;margin-bottom:4px;color:var(--ink)}
 .profile-nav-link{color:var(--blue)}
 .public-profile-shell{max-width:850px}
+.view-enter{animation:page-enter 360ms cubic-bezier(.2,.75,.25,1) both}
+@keyframes page-enter{
+  from{opacity:0;transform:translateY(9px)}
+  to{opacity:1;transform:translateY(0)}
+}
 @media(max-width:820px){
   .auth-layout{grid-template-columns:minmax(230px,.8fr) minmax(360px,1.2fr)}
   .auth-brand{padding:36px}
@@ -656,15 +661,29 @@ const api = async (url, body, method = body ? 'POST' : 'GET') => {
   return { ok: r.ok, data };
 };
 const setErr = (id, msg) => { const e = document.querySelector(`[data-for="${id}"]`); if (e) e.textContent = msg || ''; };
-const show = view => { ['auth', 'dashboard', 'tutorPublicProfile'].forEach(v => $(v).classList.toggle('hide', v !== view)); };
+const animateView = element => {
+  element.classList.remove('view-enter');
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  void element.offsetWidth;
+  element.classList.add('view-enter');
+};
+const show = view => {
+  const target = $(view);
+  const wasHidden = target.classList.contains('hide');
+  ['auth', 'dashboard', 'tutorPublicProfile'].forEach(v => $(v).classList.toggle('hide', v !== view));
+  if (wasHidden) animateView(target);
+};
 let activeConversation = null;
 let publicTutorId = null;
 let currentUserId = null;
 let messagePollTimer = null;
 let messagePollInFlight = false;
 const swap = reg => {
+  const form = $(reg ? 'regForm' : 'loginForm');
+  const wasHidden = form.classList.contains('hide');
   $('loginForm').classList.toggle('hide', reg);
   $('regForm').classList.toggle('hide', !reg);
+  if (wasHidden) animateView(form);
   $('authHeading').textContent = reg ? 'Create your account' : 'Welcome back';
   $('authSubheading').textContent = reg
     ? 'Join the C.R.A.I. learning community.'
@@ -815,6 +834,7 @@ async function loadPublicTutorProfile(tutorId) {
   }
   $('publicProfileStatus').textContent = '';
   $('publicProfileContent').classList.remove('hide');
+  animateView($('publicProfileContent'));
   $('publicTutorName').textContent = data.full_name;
   $('messageTutorLogin').href = `/?messageTutor=${encodeURIComponent(tutorId)}`;
   const subjects = $('publicTutorSubjects');
@@ -1038,6 +1058,7 @@ async function openConversation(conversation) {
   $('chatAvatar').textContent = conversationInitials(conversation.other_user_name);
   $('chatEmpty').classList.add('hide');
   $('chatContent').classList.remove('hide');
+  animateView($('chatContent'));
   $('messengerGrid').classList.add('chat-open');
   $('chatStatus').textContent = '';
   await refreshMessages(true);
@@ -1049,6 +1070,7 @@ async function showInbox() {
   activeConversation = null;
   $('dashboardHome').classList.add('hide');
   $('messagesView').classList.remove('hide');
+  animateView($('messagesView'));
   $('messengerGrid').classList.remove('chat-open');
   $('chatContent').classList.add('hide');
   $('chatEmpty').classList.remove('hide');
@@ -1082,6 +1104,7 @@ async function startTutorConversationById(tutorId) {
   show('dashboard');
   $('dashboardHome').classList.add('hide');
   $('messagesView').classList.remove('hide');
+  animateView($('messagesView'));
   const conversations = await refreshInbox();
   const conversation = conversations.find(item => item.id === data.id);
   if (conversation) await openConversation(conversation);
@@ -1094,6 +1117,7 @@ $('messagesBackBtn').onclick = () => {
   activeConversation = null;
   $('messagesView').classList.add('hide');
   $('dashboardHome').classList.remove('hide');
+  animateView($('dashboardHome'));
 };
 $('backToInbox').onclick = async () => {
   stopMessagePolling();
@@ -1101,6 +1125,7 @@ $('backToInbox').onclick = async () => {
   $('messengerGrid').classList.remove('chat-open');
   $('chatContent').classList.add('hide');
   $('chatEmpty').classList.remove('hide');
+  animateView($('chatEmpty'));
   await refreshInbox();
   startMessagePolling();
 };
