@@ -7,8 +7,20 @@ CREATE TABLE IF NOT EXISTS users (
   year_level INTEGER NOT NULL,
   password_hash TEXT NOT NULL,
   role TEXT NOT NULL CHECK (role IN ('tutor','learner','both')),
+  profile_photo TEXT,
+  phone_number TEXT,
+  sms_notifications_enabled INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  endpoint TEXT NOT NULL UNIQUE,
+  subscription_json TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_push_subscriptions_user
+  ON push_subscriptions (user_id);
 CREATE TABLE IF NOT EXISTS subjects (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   subject_name TEXT NOT NULL UNIQUE
@@ -29,3 +41,42 @@ CREATE TABLE IF NOT EXISTS tutor_rates (
   tutor_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
   rate_per_hour REAL  -- NULL = free
 );
+CREATE TABLE IF NOT EXISTS conversations (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_1_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_2_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CHECK (user_1_id < user_2_id),
+  UNIQUE (user_1_id, user_2_id)
+);
+CREATE TABLE IF NOT EXISTS messages (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  conversation_id INTEGER NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+  sender_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  content TEXT NOT NULL CHECK (length(trim(content)) > 0),
+  sent_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%f', 'now')),
+  read_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_messages_conversation_sent
+  ON messages (conversation_id, sent_at, id);
+CREATE INDEX IF NOT EXISTS idx_messages_unread
+  ON messages (conversation_id, sender_id, read_at);
+CREATE TABLE IF NOT EXISTS session_requests (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  tutor_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  learner_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  scheduled_for TEXT NOT NULL,
+  note TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'pending'
+    CHECK (status IN ('pending', 'accepted', 'declined', 'cancelled')),
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CHECK (tutor_id != learner_id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_session_requests_pending_time
+  ON session_requests (tutor_id, learner_id, scheduled_for)
+  WHERE status = 'pending';
+CREATE INDEX IF NOT EXISTS idx_session_requests_tutor_status
+  ON session_requests (tutor_id, status, created_at);
+CREATE INDEX IF NOT EXISTS idx_session_requests_learner_status
+  ON session_requests (learner_id, status, created_at);
