@@ -65,6 +65,7 @@ class TutorRateTestCase(unittest.TestCase):
         response = self.client.get("/tutor/rate")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.get_json(), {"is_free": True, "rate_per_hour": None})
+        self.assertFalse(self.client.get("/dashboard").get_json()["has_rate_configured"])
 
         response = self.client.put(
             "/tutor/rate",
@@ -75,6 +76,7 @@ class TutorRateTestCase(unittest.TestCase):
         self.assertEqual(
             self.client.get("/dashboard").get_json()["rate_per_hour"], 25.5
         )
+        self.assertTrue(self.client.get("/dashboard").get_json()["has_rate_configured"])
 
         response = self.client.put("/tutor/rate", json={"is_free": True})
         self.assertEqual(response.status_code, 200)

@@ -1,6 +1,7 @@
 import os
 import tempfile
 import unittest
+import uuid
 
 _database_dir = tempfile.TemporaryDirectory()
 os.environ["DB_FILE"] = os.path.join(_database_dir.name, "test.db")
@@ -59,6 +60,7 @@ class PublicTutorProfileTestCase(unittest.TestCase):
             {
                 "id": tutor_id,
                 "full_name": "Public Tutor",
+                "has_profile_photo": False,
                 "subjects": [],
                 "availability": [],
                 "is_free": True,
@@ -108,6 +110,48 @@ class PublicTutorProfileTestCase(unittest.TestCase):
         self.assertNotIn("email", profile)
         self.assertNotIn("student_id", profile)
         self.assertNotIn("password_hash", profile)
+
+    def test_public_tutor_profile_reports_and_serves_profile_photo(self):
+        tutor_id = self.create_user()
+        filename = f"{uuid.uuid4().hex}.png"
+        image = b"\x89PNG\r\n\x1a\npublic tutor photo"
+        with tempfile.TemporaryDirectory() as upload_dir:
+            previous_dir = app.config["PROFILE_PHOTO_DIR"]
+            app.config["PROFILE_PHOTO_DIR"] = upload_dir
+            try:
+                with open(os.path.join(upload_dir, filename), "wb") as photo:
+                    photo.write(image)
+                conn = get_db()
+                conn.execute(
+                    "UPDATE users SET profile_photo = ? WHERE id = ?",
+                    (filename, tutor_id),
+                )
+                conn.commit()
+                conn.close()
+
+                profile = self.client.get(f"/api/tutors/{tutor_id}").get_json()
+                self.assertTrue(profile["has_profile_photo"])
+                public_client = app.test_client()
+                response = public_client.get(f"/api/tutors/{tutor_id}/photo")
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.data, image)
+                self.assertEqual(response.mimetype, "image/png")
+                self.assertIn("no-store", response.headers["Cache-Control"])
+                self.assertEqual(
+                    response.headers["X-Content-Type-Options"], "nosniff"
+                )
+            finally:
+                app.config["PROFILE_PHOTO_DIR"] = previous_dir
+
+    def test_public_tutor_photo_rejects_missing_photo_and_non_tutors(self):
+        tutor_id = self.create_user()
+        learner_id = self.create_user("learner", "learner@example.com")
+        self.assertEqual(
+            self.client.get(f"/api/tutors/{tutor_id}/photo").status_code, 404
+        )
+        self.assertEqual(
+            self.client.get(f"/api/tutors/{learner_id}/photo").status_code, 404
+        )
 
     def test_missing_or_non_tutor_profiles_return_not_found(self):
         learner_id = self.create_user("learner")

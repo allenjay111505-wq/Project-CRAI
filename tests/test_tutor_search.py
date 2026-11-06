@@ -86,6 +86,10 @@ class TutorSearchTestCase(unittest.TestCase):
             "INSERT INTO tutor_rates (tutor_id, rate_per_hour) VALUES (?, ?)",
             (tutor_id, 18.5),
         )
+        conn.execute(
+            "UPDATE users SET profile_photo = ? WHERE id = ?",
+            ("a" * 32 + ".png", tutor_id),
+        )
         conn.commit()
         conn.close()
 
@@ -98,9 +102,11 @@ class TutorSearchTestCase(unittest.TestCase):
             {
                 "id": tutor_id,
                 "full_name": "Ana Tutor",
+                "has_profile_photo": True,
                 "subjects": ["Calculus", "Physics"],
                 "is_free": False,
                 "rate_per_hour": 18.5,
+                "availability": "",
             },
         )
 
@@ -192,6 +198,7 @@ class TutorSearchTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         tutors = response.get_json()["tutors"]
         self.assertEqual([tutor["id"] for tutor in tutors], [free_monday])
+        self.assertEqual(tutors[0]["availability"], "Monday 09:00-12:00")
 
         response = self.client.get(
             "/api/tutors?subject=Calculus&day=Monday&start_time=10:00"

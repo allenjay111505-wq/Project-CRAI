@@ -1,6 +1,7 @@
 import os
 import tempfile
 import unittest
+import uuid
 
 _database_dir = tempfile.TemporaryDirectory()
 os.environ["DB_FILE"] = os.path.join(_database_dir.name, "test.db")
@@ -273,6 +274,59 @@ class MessagingTestCase(unittest.TestCase):
         )
         self.assertEqual(conversations[0]["latest_message"], "Most recent message")
         self.assertEqual(conversations[0]["other_user_name"], "Tutor One")
+
+    def test_inbox_includes_photo_state_and_only_conversation_users_can_view_learner_photo(self):
+        learner_id = self.create_user(
+            self.first_client, "Learner One", "learner1@example.com", "learner"
+        )
+        tutor_id = self.create_user(
+            self.second_client, "Tutor One", "tutor1@example.com", "tutor"
+        )
+        self.create_user(
+            self.third_client, "Learner Two", "learner2@example.com", "learner"
+        )
+        self.start_conversation(self.first_client, tutor_id)
+
+        with tempfile.TemporaryDirectory() as upload_dir:
+            previous_dir = app.config["PROFILE_PHOTO_DIR"]
+            app.config["PROFILE_PHOTO_DIR"] = upload_dir
+            try:
+                filename = f"{uuid.uuid4().hex}.png"
+                photo = b"\x89PNG\r\n\x1a\nlearner photo"
+                with open(os.path.join(upload_dir, filename), "wb") as stored_photo:
+                    stored_photo.write(photo)
+                conn = get_db()
+                conn.execute(
+                    "UPDATE users SET profile_photo = ? WHERE id = ?",
+                    (filename, learner_id),
+                )
+                conn.commit()
+                conn.close()
+
+                inbox = self.second_client.get("/conversations").get_json()[
+                    "conversations"
+                ]
+                self.assertEqual(len(inbox), 1)
+                self.assertTrue(inbox[0]["has_profile_photo"])
+                response = self.second_client.get(
+                    f"/api/users/{learner_id}/photo"
+                )
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.data, photo)
+                self.assertEqual(
+                    self.third_client.get(
+                        f"/api/users/{learner_id}/photo"
+                    ).status_code,
+                    404,
+                )
+                self.assertEqual(
+                    app.test_client().get(
+                        f"/api/users/{learner_id}/photo"
+                    ).status_code,
+                    401,
+                )
+            finally:
+                app.config["PROFILE_PHOTO_DIR"] = previous_dir
 
 
 if __name__ == "__main__":

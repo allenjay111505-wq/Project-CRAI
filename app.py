@@ -1,18 +1,33 @@
 import io
+import json
 import math
 import os
 import re
 import sqlite3
 import uuid
 from datetime import datetime, timedelta
+from urllib.parse import urlsplit
 
-from flask import Flask, jsonify, request, send_file, session
+from flask import Flask, jsonify, make_response, request, send_file, session
+from flask_sock import Sock
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from db import get_db, init_db
+from notifications import push_configuration, send_push_to_user, send_sms_to_user
+from realtime import add_client, remove_client, send_to_user
+from session_requests import session_requests_bp
 
 app = Flask(__name__, static_folder="public", static_url_path="")
-app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-me")
+APP_ENV = os.environ.get("APP_ENV", "development").strip().casefold()
+secret_key = os.environ.get("SECRET_KEY")
+if secret_key:
+    secret_key = secret_key.strip()
+if not secret_key:
+    if APP_ENV == "production":
+        raise RuntimeError("SECRET_KEY must be configured when APP_ENV=production")
+    app.logger.warning("Using the development SECRET_KEY; configure SECRET_KEY before deployment.")
+    secret_key = "dev-secret-change-me"
+app.secret_key = secret_key
 app.permanent_session_lifetime = timedelta(hours=2)
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
@@ -22,8 +37,11 @@ app.config.update(
 )
 
 init_db()
+app.register_blueprint(session_requests_bp)
+sock = Sock(app)
 
 EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
+PHONE_RE = re.compile(r"^\+[1-9]\d{7,14}$")
 DAYS = ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
 MAX_PROFILE_PHOTO_SIZE = 5 * 1024 * 1024
 PROFILE_PHOTO_TYPES = {
@@ -205,8 +223,13 @@ def search_tutors():
 
     conn = get_db()
     rows = conn.execute(
-        """SELECT users.id, users.full_name, subjects.subject_name,
-                  tutor_rates.rate_per_hour
+        """SELECT users.id, users.full_name, users.profile_photo,
+                  subjects.subject_name,
+                  tutor_rates.rate_per_hour,
+                  (SELECT group_concat(
+                       day || ' ' || start_time || '-' || end_time, '; ')
+                   FROM availability
+                   WHERE availability.tutor_id = users.id) AS availability
            FROM users
            JOIN tutor_subjects ON tutor_subjects.tutor_id = users.id
            JOIN subjects ON subjects.id = tutor_subjects.subject_id
@@ -224,9 +247,11 @@ def search_tutors():
             {
                 "id": row["id"],
                 "full_name": row["full_name"],
+                "has_profile_photo": row["profile_photo"] is not None,
                 "subjects": [],
                 "is_free": row["rate_per_hour"] is None,
                 "rate_per_hour": row["rate_per_hour"],
+                "availability": row["availability"] or "",
             },
         )
         tutor["subjects"].append(row["subject_name"])
@@ -239,7 +264,7 @@ def search_tutors():
 def public_tutor_profile(tutor_id):
     conn = get_db()
     tutor = conn.execute(
-        """SELECT id, full_name FROM users
+        """SELECT id, full_name, profile_photo FROM users
            WHERE id = ? AND role IN ('tutor', 'both')""",
         (tutor_id,),
     ).fetchone()
@@ -265,6 +290,7 @@ def public_tutor_profile(tutor_id):
         (tutor_id,),
     ).fetchall()
     profile = dict(tutor)
+    profile["has_profile_photo"] = profile.pop("profile_photo") is not None
     profile["subjects"] = [row["subject_name"] for row in subjects]
     profile["availability"] = [dict(slot) for slot in availability]
     profile.update(tutor_rate_data(conn, tutor_id))
@@ -336,7 +362,8 @@ def dashboard():
     conn = get_db()
     user = conn.execute(
         """SELECT id, full_name, email, student_id, course, year_level, role,
-                  profile_photo, created_at
+                  profile_photo, phone_number, sms_notifications_enabled,
+                  created_at
            FROM users WHERE id = ?""", (uid,)).fetchone()
     if not user:
         conn.close()
@@ -352,13 +379,128 @@ def dashboard():
     ).fetchall()
     user_data = dict(user)
     user_data["has_profile_photo"] = user_data.pop("profile_photo") is not None
+    user_data["sms_notifications_enabled"] = bool(
+        user_data["sms_notifications_enabled"]
+    )
     user_data["subjects"] = [subject["subject_name"] for subject in subjects]
     if user["role"] in ("tutor", "both"):
         user_data.update(tutor_rate_data(conn, uid))
+        user_data["has_rate_configured"] = conn.execute(
+            "SELECT 1 FROM tutor_rates WHERE tutor_id = ?", (uid,)
+        ).fetchone() is not None
     conn.close()
     resp = jsonify(user_data)
     resp.headers["Cache-Control"] = "no-store"
     return resp
+
+
+@app.put("/profile")
+def update_profile():
+    uid = session.get("uid")
+    if not uid:
+        return fail(401, "Not authenticated")
+
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return fail(400, "Profile update must be a JSON object")
+
+    field_limits = {
+        "full_name": 120,
+        "email": 254,
+        "student_id": 100,
+        "course": 120,
+    }
+    values = {}
+    for field, max_length in field_limits.items():
+        value = data.get(field)
+        if not isinstance(value, str) or not value.strip():
+            return fail(400, f"{field.replace('_', ' ').capitalize()} is required")
+        value = value.strip()
+        if len(value) > max_length:
+            return fail(400, f"{field.replace('_', ' ').capitalize()} must be {max_length} characters or fewer")
+        values[field] = value
+
+    values["email"] = values["email"].lower()
+    if not EMAIL_RE.match(values["email"]):
+        return fail(400, "Invalid email format")
+
+    year_level = data.get("year_level")
+    if isinstance(year_level, bool) or not isinstance(year_level, (str, int)):
+        return fail(400, "Invalid year level")
+    try:
+        year_level = int(year_level)
+    except (ValueError, TypeError):
+        return fail(400, "Invalid year level")
+    if not 1 <= year_level <= 6:
+        return fail(400, "Invalid year level")
+
+    phone_number = data.get("phone_number")
+    if phone_number is not None:
+        if not isinstance(phone_number, str):
+            return fail(400, "Phone number must be text")
+        phone_number = phone_number.strip()
+        if phone_number and not PHONE_RE.fullmatch(phone_number):
+            return fail(400, "Enter a phone number in international format, such as +15551234567")
+    sms_notifications_enabled = data.get("sms_notifications_enabled")
+    if sms_notifications_enabled is not None and not isinstance(
+        sms_notifications_enabled, bool
+    ):
+        return fail(400, "SMS notification consent must be true or false")
+    if sms_notifications_enabled and not phone_number:
+        conn = get_db()
+        existing_phone = conn.execute(
+            "SELECT phone_number FROM users WHERE id = ?", (uid,)
+        ).fetchone()
+        conn.close()
+        if not existing_phone or not existing_phone["phone_number"]:
+            return fail(400, "Add a phone number before enabling SMS notifications")
+
+    conn = get_db()
+    try:
+        current_user = conn.execute(
+            "SELECT phone_number, sms_notifications_enabled FROM users WHERE id = ?",
+            (uid,),
+        ).fetchone()
+        if not current_user:
+            session.clear()
+            return fail(401, "Not authenticated")
+        if phone_number is None:
+            phone_number = current_user["phone_number"]
+        if sms_notifications_enabled is None:
+            sms_notifications_enabled = bool(current_user["sms_notifications_enabled"])
+        if sms_notifications_enabled and not phone_number:
+            return fail(400, "Add a phone number before enabling SMS notifications")
+        cursor = conn.execute(
+            """UPDATE users
+               SET full_name = ?, email = ?, student_id = ?, course = ?, year_level = ?,
+                   phone_number = ?, sms_notifications_enabled = ?
+               WHERE id = ?""",
+            (
+                values["full_name"], values["email"], values["student_id"],
+                values["course"], year_level, phone_number,
+                int(sms_notifications_enabled), uid,
+            ),
+        )
+        if cursor.rowcount == 0:
+            session.clear()
+            return fail(401, "Not authenticated")
+        conn.commit()
+    except sqlite3.IntegrityError:
+        return fail(409, "Email is already registered")
+    finally:
+        conn.close()
+
+    response = jsonify(
+        message="Profile updated successfully",
+        profile={
+            **values,
+            "year_level": year_level,
+            "phone_number": phone_number,
+            "sms_notifications_enabled": sms_notifications_enabled,
+        },
+    )
+    response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 @app.get("/profile/photo")
@@ -374,18 +516,46 @@ def get_profile_photo():
     if not user:
         session.clear()
         return fail(401, "Not authenticated")
-    filename = user["profile_photo"]
+    response = profile_photo_response(user["profile_photo"])
+    response.headers["Cache-Control"] = "private, no-store"
+    return response
+
+
+@app.get("/api/tutors/<int:tutor_id>/photo")
+def public_tutor_photo(tutor_id):
+    conn = get_db()
+    tutor = conn.execute(
+        """SELECT profile_photo FROM users
+           WHERE id = ? AND role IN ('tutor', 'both')""",
+        (tutor_id,),
+    ).fetchone()
+    conn.close()
+    if not tutor:
+        return fail(404, "Tutor profile not found")
+    response = profile_photo_response(tutor["profile_photo"])
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+def profile_photo_response(filename):
+    def not_found(message):
+        response = make_response(jsonify(error=message), 404)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        return response
+
     if not filename or not re.fullmatch(
         r"[0-9a-f]{32}\.(?:png|jpg|webp)", filename
     ):
-        return fail(404, "No profile photo has been uploaded")
+        return not_found("No profile photo has been uploaded")
     extension = os.path.splitext(filename)[1]
     mimetype = {".png": "image/png", ".jpg": "image/jpeg", ".webp": "image/webp"}.get(
         extension
     )
     if not mimetype:
-        return fail(404, "Profile photo not found")
+        return not_found("Profile photo not found")
     photo_path = os.path.join(app.config["PROFILE_PHOTO_DIR"], filename)
+    if not os.path.isfile(photo_path):
+        return not_found("Profile photo not found")
     with open(photo_path, "rb") as stored_photo:
         photo_contents = stored_photo.read()
     response = send_file(
@@ -393,7 +563,6 @@ def get_profile_photo():
         mimetype=mimetype,
         max_age=0,
     )
-    response.headers["Cache-Control"] = "private, no-store"
     response.headers["X-Content-Type-Options"] = "nosniff"
     return response
 
@@ -818,6 +987,144 @@ def logout():
     return jsonify(message="Logged out")
 
 
+@app.get("/api/push/config")
+def push_config():
+    public_key, private_key, subject = push_configuration()
+    configured = bool(public_key and private_key and subject)
+    response = jsonify(
+        configured=configured,
+        public_key=public_key if configured else "",
+    )
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+@app.get("/api/push/subscription")
+def get_push_subscription_status():
+    user_id = session.get("uid")
+    if not user_id:
+        return fail(401, "Not authenticated")
+    conn = get_db()
+    subscription = conn.execute(
+        "SELECT 1 FROM push_subscriptions WHERE user_id = ? LIMIT 1",
+        (user_id,),
+    ).fetchone()
+    conn.close()
+    return jsonify(enabled=subscription is not None)
+
+
+@app.post("/api/push/subscription")
+def save_push_subscription():
+    user_id = session.get("uid")
+    if not user_id:
+        return fail(401, "Not authenticated")
+    public_key, private_key, subject = push_configuration()
+    if not all((public_key, private_key, subject)):
+        return fail(503, "Browser push notifications are not configured")
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return fail(400, "Push subscription must be a JSON object")
+    endpoint = data.get("endpoint")
+    keys = data.get("keys")
+    try:
+        parsed_endpoint = urlsplit(endpoint) if isinstance(endpoint, str) else None
+        endpoint_port = parsed_endpoint.port if parsed_endpoint else None
+    except ValueError:
+        parsed_endpoint = None
+        endpoint_port = None
+    endpoint_host = parsed_endpoint.hostname if parsed_endpoint else None
+    trusted_push_host = bool(
+        endpoint_host
+        and (
+            endpoint_host == "fcm.googleapis.com"
+            or endpoint_host.endswith(
+                (".push.services.mozilla.com", ".notify.windows.com")
+            )
+            or endpoint_host == "web.push.apple.com"
+        )
+    )
+    if (
+        not isinstance(endpoint, str)
+        or len(endpoint) > 2048
+        or not parsed_endpoint
+        or parsed_endpoint.scheme != "https"
+        or not parsed_endpoint.path
+        or parsed_endpoint.username is not None
+        or parsed_endpoint.password is not None
+        or parsed_endpoint.fragment
+        or endpoint_port not in (None, 443)
+        or not trusted_push_host
+        or not isinstance(keys, dict)
+        or not isinstance(keys.get("p256dh"), str)
+        or not keys["p256dh"]
+        or len(keys["p256dh"]) > 256
+        or not isinstance(keys.get("auth"), str)
+        or not keys["auth"]
+        or len(keys["auth"]) > 256
+    ):
+        return fail(400, "Invalid browser push subscription")
+    conn = get_db()
+    user = conn.execute("SELECT 1 FROM users WHERE id = ?", (user_id,)).fetchone()
+    if not user:
+        conn.close()
+        session.clear()
+        return fail(401, "Not authenticated")
+    conn.execute(
+        """INSERT INTO push_subscriptions (user_id, endpoint, subscription_json)
+           VALUES (?, ?, ?)
+           ON CONFLICT(endpoint) DO UPDATE SET
+               user_id = excluded.user_id,
+               subscription_json = excluded.subscription_json""",
+        (user_id, endpoint, json.dumps(data)),
+    )
+    conn.commit()
+    conn.close()
+    response = jsonify(message="Browser notifications enabled")
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+@app.delete("/api/push/subscription")
+def delete_push_subscription():
+    user_id = session.get("uid")
+    if not user_id:
+        return fail(401, "Not authenticated")
+    conn = get_db()
+    conn.execute("DELETE FROM push_subscriptions WHERE user_id = ?", (user_id,))
+    conn.commit()
+    conn.close()
+    response = jsonify(message="Browser notifications disabled")
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+@sock.route("/ws/chat")
+def realtime_chat(websocket):
+    user_id = session.get("uid")
+    if not user_id:
+        websocket.close(reason="Authentication required")
+        return
+    conn = get_db()
+    user = conn.execute("SELECT 1 FROM users WHERE id = ?", (user_id,)).fetchone()
+    conn.close()
+    if not user:
+        session.clear()
+        websocket.close(reason="Authentication required")
+        return
+
+    add_client(user_id, websocket)
+    try:
+        websocket.send(json.dumps({"type": "connected"}))
+        while websocket.receive() is not None:
+            pass
+    except Exception:
+        app.logger.warning(
+            "Realtime chat connection ended for user %s", user_id, exc_info=True
+        )
+    finally:
+        remove_client(user_id, websocket)
+
+
 @app.post("/conversations")
 def create_conversation():
     uid = session.get("uid")
@@ -877,6 +1184,7 @@ def list_conversations():
         """SELECT conversations.id, conversations.created_at,
                   other_user.id AS other_user_id,
                   other_user.full_name AS other_user_name,
+                  other_user.profile_photo AS other_user_profile_photo,
                   substr(latest.content, 1, 160) AS latest_message,
                   latest.sent_at AS latest_sent_at,
                   (SELECT COUNT(*) FROM messages AS unread
@@ -906,6 +1214,7 @@ def list_conversations():
                 "id": row["id"],
                 "other_user_id": row["other_user_id"],
                 "other_user_name": row["other_user_name"],
+                "has_profile_photo": row["other_user_profile_photo"] is not None,
                 "latest_message": row["latest_message"],
                 "latest_sent_at": row["latest_sent_at"],
                 "created_at": row["created_at"],
@@ -915,6 +1224,42 @@ def list_conversations():
         ]
     )
     response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+@app.get("/api/users/<int:user_id>/photo")
+def conversation_user_photo(user_id):
+    viewer_id = session.get("uid")
+    conn = get_db()
+    user = conn.execute(
+        "SELECT id, role, profile_photo FROM users WHERE id = ?", (user_id,)
+    ).fetchone()
+    if not user:
+        conn.close()
+        return fail(404, "User profile not found")
+
+    is_public_tutor = user["role"] in ("tutor", "both")
+    if not is_public_tutor:
+        if not viewer_id:
+            conn.close()
+            return fail(401, "Not authenticated")
+        is_conversation_participant = conn.execute(
+            """SELECT 1 FROM conversations
+               WHERE (user_1_id = ? AND user_2_id = ?)
+                  OR (user_1_id = ? AND user_2_id = ?)""",
+            (viewer_id, user_id, user_id, viewer_id),
+        ).fetchone()
+        can_view_requested_learner = conn.execute(
+            """SELECT 1 FROM session_requests
+               WHERE tutor_id = ? AND learner_id = ?""",
+            (viewer_id, user_id),
+        ).fetchone()
+        if not is_conversation_participant and not can_view_requested_learner:
+            conn.close()
+            return fail(404, "User profile not found")
+    conn.close()
+    response = profile_photo_response(user["profile_photo"])
+    response.headers["Cache-Control"] = "private, no-store"
     return response
 
 
@@ -975,6 +1320,17 @@ def send_message(conversation_id):
         (cursor.lastrowid,),
     ).fetchone()
     conn.close()
+    recipient_id = (
+        conversation["user_2_id"]
+        if conversation["user_1_id"] == uid
+        else conversation["user_1_id"]
+    )
+    send_to_user(
+        recipient_id,
+        {"type": "new_message", "conversation_id": conversation_id},
+    )
+    send_push_to_user(recipient_id, "New message", "You have a new C.R.A.I. message.")
+    send_sms_to_user(recipient_id, "You have a new C.R.A.I. message.")
     response = jsonify(message=dict(row))
     response.status_code = 201
     response.headers["Cache-Control"] = "no-store"

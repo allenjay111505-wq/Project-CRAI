@@ -21,5 +21,11 @@ def init_db():
     }
     if "profile_photo" not in user_columns:
         conn.execute("ALTER TABLE users ADD COLUMN profile_photo TEXT")
-        conn.commit()
+    if "phone_number" not in user_columns:
+        conn.execute("ALTER TABLE users ADD COLUMN phone_number TEXT")
+    if "sms_notifications_enabled" not in user_columns:
+        conn.execute(
+            "ALTER TABLE users ADD COLUMN sms_notifications_enabled INTEGER NOT NULL DEFAULT 0"
+        )
+    conn.commit()
     conn.close()
