@@ -119,14 +119,42 @@ class ResourceLibraryTestCase(unittest.TestCase):
     def test_learners_see_and_download_only_published_relevant_resources(self):
         visible = self.upload()
         hidden = self.upload(published="0")
+        other_tutor_visible = self.upload(client=self.other_tutor)
         self.assertEqual(visible.status_code, 201)
         self.assertEqual(hidden.status_code, 201)
+        self.assertEqual(other_tutor_visible.status_code, 201)
         self.assertEqual(self.learner.get("/api/resources").status_code, 400)
         listing = self.learner.get("/api/resources?subject=biology")
         self.assertEqual(listing.status_code, 200)
         resources = listing.get_json()["resources"]
-        self.assertEqual([resource["title"] for resource in resources], ["Cell notes"])
+        self.assertEqual(len(resources), 2)
         self.assertNotIn("storage_key", resources[0])
+        tutor_listing = self.learner.get(
+            f"/api/resources?subject=biology&tutor_id={self.tutor_id}"
+        )
+        self.assertEqual(
+            [
+                resource["tutor_name"]
+                for resource in tutor_listing.get_json()["resources"]
+            ],
+            ["Tutor"],
+        )
+        other_tutor_listing = self.learner.get(
+            f"/api/resources?subject=biology&tutor_id={self.other_tutor_id}"
+        )
+        self.assertEqual(
+            [
+                resource["tutor_name"]
+                for resource in other_tutor_listing.get_json()["resources"]
+            ],
+            ["Other Tutor"],
+        )
+        self.assertEqual(
+            self.learner.get(
+                "/api/resources?subject=biology&tutor_id=invalid"
+            ).status_code,
+            400,
+        )
 
         resource_id = visible.get_json()["id"]
         downloaded = self.learner.get(

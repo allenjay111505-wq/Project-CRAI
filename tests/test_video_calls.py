@@ -37,13 +37,25 @@ class VideoCallTestCase(unittest.TestCase):
         self.other_id = self.create_user(
             self.other, "Other Learner", "call-other@example.com", "learner"
         )
+        scheduled_for = (datetime.now(timezone.utc) + timedelta(days=2)).replace(
+            hour=12, minute=0, second=0, microsecond=0
+        ).isoformat(timespec="minutes")
+        scheduled_date = datetime.fromisoformat(scheduled_for)
+        conn = get_db()
+        availability_id = conn.execute(
+            """INSERT INTO availability (tutor_id, day, start_time, end_time)
+               VALUES (?, ?, '00:00', '23:59')""",
+            (self.tutor_id, scheduled_date.strftime("%A")),
+        ).lastrowid
+        conn.commit()
+        conn.close()
         requested = self.learner.post(
             "/session-requests",
             json={
                 "tutor_id": self.tutor_id,
-                "scheduled_for": (
-                    datetime.now(timezone.utc) + timedelta(days=2)
-                ).isoformat(timespec="minutes"),
+                "scheduled_for": scheduled_for,
+                "availability_id": availability_id,
+                "timezone_offset_minutes": 0,
             },
         )
         self.assertEqual(requested.status_code, 201)

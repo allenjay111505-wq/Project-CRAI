@@ -21,9 +21,9 @@ The database file `crai.db` and all tables are created automatically from `schem
 Messages and conversations are stored locally in SQLite.
 New resource, quiz, assignment, attempt, and focus-indicator tables are created additively by the existing idempotent schema initialization; existing account and tutoring data is not dropped.
 
-Tutors manage their own weekly availability. Learners can view the tutor’s published schedule and propose a meeting time; a request does not reserve or modify a time slot.
+Tutors manage their own weekly availability. Learners search by tutor name and/or subject, then view availability on the tutor profile and propose a time within a published slot. The server validates the selected slot; a request does not reserve or modify it. Availability has no separate tutor-timezone setting, so schedule matching assumes tutor and learner use the same local timezone.
 
-Tutor resources accept UTF-8 TXT, Markdown, PDF, and DOCX uploads up to 5 MB. Files are stored outside `public/`, use generated storage names, and are served only through permission-checked download routes. Quiz generation currently extracts readable text from TXT, Markdown, and DOCX; PDF files remain downloadable but are not supported as generation sources.
+At the bottom of the tutor’s **My Profile** page, a subject-per-row table shows each subject, available days and times, and a **My learning materials** button for that subject. The button opens the subject’s materials and upload/management controls. Public tutor profiles group shared PDFs by subject. Tutor resources accept UTF-8 TXT, Markdown, PDF, and DOCX uploads up to 5 MB. Files are stored outside `public/`, use generated storage names, and are served only through permission-checked download routes. Quiz generation currently extracts readable text from TXT, Markdown, and DOCX; PDF files remain downloadable but are not supported as generation sources.
 
 Sample logins after seeding (password `password123`): `ana@example.com` (tutor), `ben@example.com` (learner), `cara@example.com` (both).
 
@@ -103,7 +103,7 @@ The app sends notifications for new messages and session request creation or sta
 | GET | `/conversations/<id>/messages` | Lists messages in a conversation the logged-in user participates in |
 | POST | `/conversations/<id>/messages` | Sends a non-empty message (up to 2,000 characters) in a conversation |
 | PUT | `/conversations/<id>/read` | Marks incoming messages in a participant's conversation as read |
-| POST | `/session-requests` | Learner proposes a future date/time to a tutor, optionally with a note |
+| POST | `/session-requests` | Learner proposes a future time within the selected tutor availability slot, with an optional note |
 | GET | `/session-requests` | Lists requests involving the logged-in user, with sent/received direction and status |
 | GET | `/session-requests/<id>/learner-profile` | Returns the learner's name, email, student number, course, year level, and photo availability to the tutor who received that request |
 | PUT | `/session-requests/<id>` | Tutor accepts/declines a pending request, or the learner cancels it |
@@ -123,8 +123,9 @@ The app sends notifications for new messages and session request creation or sta
 | GET | `/api/quizzes/<id>/attempts` | Tutor sees learner answers, results, and non-proof focus indicators |
 | GET | `/api/session-requests/<id>/video-config` | ICE configuration for a participant in an accepted request |
 | WebSocket | `/ws/calls/<id>` | Authenticated WebRTC signaling for accepted-request participants only |
-| GET | `/tutors/search?subject=<name>` | Ticket search route; supports case-insensitive subject, `day`, optional paired `start_time`/`end_time`, `free=true|false`, and `sort=name|rate_asc|rate_desc` filters |
-| GET | `/api/tutors?subject=<name>` | Backward-compatible alias for tutor search; also supports `rate=free|paid` |
+| GET | `/tutors/search?subject=<name>&name=<partial>` | Searches tutors by case-insensitive subject and/or partial tutor name; when both are supplied, both must match |
+| GET | `/api/tutors?subject=<name>&name=<partial>` | Alias for tutor search; at least one of `subject` or `name` is required |
+| GET | `/api/resources?subject=<name>&tutor_id=<id>` | Lists published resources relevant to a subject, optionally limited to one tutor |
 | GET | `/tutor/subjects` | Lists a tutor's subjects and the shared subject catalog |
 | POST | `/tutor/subjects` | Adds a listed or newly entered subject to the logged-in tutor |
 | PUT | `/tutor/subjects` | Replaces one assigned subject using `{ "subject_id": 1, "subject_name": "Biology" }` |
@@ -161,4 +162,4 @@ public/default-avatar.svg   fallback avatar when a user has not uploaded a photo
 
 ## Out of scope (later sprints)
 
-Calendar booking/reservation, ratings, and payments. Session requests are proposed and accepted in-app but do not reserve tutor availability. Tutor discovery supports subject, availability, and rate filters.
+Calendar booking/reservation, ratings, and payments. Session requests are proposed and accepted in-app but do not reserve tutor availability. Tutor discovery currently supports name and subject search only.
