@@ -122,11 +122,31 @@ class SessionRequestTestCase(unittest.TestCase):
         )
 
     def test_request_creation_is_private_and_duplicate_pending_time_is_rejected(self):
+        conn = get_db()
+        conn.execute(
+            """INSERT INTO availability (tutor_id, day, start_time, end_time)
+               VALUES (?, 'Monday', '09:00', '10:00')""",
+            (self.tutor_id,),
+        )
+        conn.commit()
+        before = conn.execute(
+            "SELECT day, start_time, end_time FROM availability WHERE tutor_id = ?",
+            (self.tutor_id,),
+        ).fetchall()
+        conn.close()
+
         scheduled_for = self.future_time()
         created = self.create_request(scheduled_for=scheduled_for)
         self.assertEqual(created.status_code, 201)
         self.assertEqual(created.get_json()["status"], "pending")
         request_id = created.get_json()["id"]
+        conn = get_db()
+        after = conn.execute(
+            "SELECT day, start_time, end_time FROM availability WHERE tutor_id = ?",
+            (self.tutor_id,),
+        ).fetchall()
+        conn.close()
+        self.assertEqual([tuple(row) for row in before], [tuple(row) for row in after])
         duplicate = self.create_request(scheduled_for=scheduled_for)
         self.assertEqual(duplicate.status_code, 409)
 

@@ -2,7 +2,12 @@ import os
 import sqlite3
 
 BASE = os.path.dirname(os.path.abspath(__file__))
-DB_FILE = os.environ.get("DB_FILE", os.path.join(BASE, "crai.db"))
+configured_db_file = os.environ.get("DB_FILE", "").strip()
+DB_FILE = (
+    os.path.abspath(configured_db_file)
+    if configured_db_file
+    else os.path.join(BASE, "crai.db")
+)
 
 
 def get_db():

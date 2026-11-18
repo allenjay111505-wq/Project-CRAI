@@ -1,7 +1,7 @@
-# Project C.R.A.I. — Sprint 1
+# Project C.R.A.I. — Peer Tutoring
 
-Registration, login, database, and a role-based dashboard with separate profile, learner search, tutor workspace, session request, and inbox pages for the peer-to-peer tutoring system.
-Stack: Python + Flask, SQLite (built into Python), hashed passwords (Werkzeug), signed httpOnly session cookie, plain HTML/CSS/JS frontend.
+Role-based peer tutoring with tutor discovery, availability, private subject resources, source-grounded quiz drafts, session requests, messaging, and optional browser-based video calls.
+Stack: Python + Flask, SQLite (built into Python), hashed passwords (Werkzeug), signed httpOnly session cookie, and a plain HTML/CSS/JS frontend.
 
 Tutors can add subjects from the shared subject list or enter a new subject, and remove subjects from their profile. A tutor must keep at least one subject.
 
@@ -19,6 +19,11 @@ python app.py                  # http://localhost:3000
 
 The database file `crai.db` and all tables are created automatically from `schema.sql`.
 Messages and conversations are stored locally in SQLite.
+New resource, quiz, assignment, attempt, and focus-indicator tables are created additively by the existing idempotent schema initialization; existing account and tutoring data is not dropped.
+
+Tutors manage their own weekly availability. Learners can view the tutor’s published schedule and propose a meeting time; a request does not reserve or modify a time slot.
+
+Tutor resources accept UTF-8 TXT, Markdown, PDF, and DOCX uploads up to 5 MB. Files are stored outside `public/`, use generated storage names, and are served only through permission-checked download routes. Quiz generation currently extracts readable text from TXT, Markdown, and DOCX; PDF files remain downloadable but are not supported as generation sources.
 
 Sample logins after seeding (password `password123`): `ana@example.com` (tutor), `ben@example.com` (learner), `cara@example.com` (both).
 
@@ -30,6 +35,12 @@ Sample logins after seeding (password `password123`): `ana@example.com` (tutor),
 | `APP_ENV` | `development` | Set to `production` to enable production configuration checks |
 | `SECRET_KEY` | Development-only key | Signs the session cookie. Required when `APP_ENV=production`; keep it private |
 | `DB_FILE` | `./crai.db` | SQLite file path |
+| `RESOURCE_STORAGE_DIR` | `./uploads/resources` | Private resource upload directory. Required to point to persistent storage in production and must not be under `public/` |
+| `GEMINI_API_KEY` | unset | Server-side Google Gemini API key. Quiz generation returns unavailable when unset |
+| `GEMINI_MODEL` | `gemini-2.5-flash` | Gemini model name used by the server |
+| `STUN_URLS` | unset | Optional comma-separated STUN URLs used for WebRTC connectivity |
+| `TURN_URLS` | unset | Optional comma-separated TURN URLs. Configure this for networks that need TURN relay |
+| `TURN_SHARED_SECRET` | unset | Coturn REST shared secret used to create short-lived TURN credentials; required with `TURN_URLS` |
 | `VAPID_PUBLIC_KEY` | unset | Public VAPID key used by browser push |
 | `VAPID_PRIVATE_KEY` | unset | Path to the PEM-encoded VAPID private key |
 | `VAPID_SUBJECT` | unset | VAPID contact URI, such as `mailto:admin@example.com` |
@@ -38,9 +49,27 @@ Sample logins after seeding (password `password123`): `ana@example.com` (tutor),
 | `TWILIO_AUTH_TOKEN` | unset | Twilio auth token; keep it private |
 | `TWILIO_FROM_NUMBER` | unset | Twilio phone number in E.164 format |
 
-The built-in secret is for local development only. Before deployment, configure a strong random `SECRET_KEY`; the app refuses to start in production without one.
+The built-in secret is for local development only. Before deployment, configure a strong random `SECRET_KEY`; the app refuses to start in production without one. Production also requires `DB_FILE` and `RESOURCE_STORAGE_DIR` to be explicitly configured on persistent storage. Mount the persistent volume to contain both paths so accounts, messages, and uploaded files survive redeployments.
 
-Profile photos are stored locally in `uploads/profile_photos/` and excluded from Git.
+Profile photos are stored locally in `uploads/profile_photos/` and excluded from Git. Mount persistent storage for this directory as well if uploaded profile photos must survive restarts.
+
+## Tutor resources and quizzes
+
+Tutors can upload a resource under a subject they currently teach, keep it private, or explicitly publish it for learners. Learners browse by subject and can download only published resources from tutors who still list that subject. The server validates file size and content, stores random private filenames, and never exposes the storage directory as static content.
+
+Quiz generation is disabled unless `GEMINI_API_KEY` is configured. Before generation or regeneration, the tutor must explicitly authorize sending the selected resource’s extracted text to Google Gemini. Only the extracted source text and requested question counts are sent; credentials stay server-side. Review each generated question, answer key, and source excerpt before publishing. The generator verifies exact source excerpts and fails clearly when the material is unreadable, unsupported, insufficient, or the provider response cannot be checked; it does not provide fake fallback questions.
+
+Each quiz has Test 1 multiple-choice and Test 2 identification questions. Tutors can edit drafts, review answer keys, regenerate, publish, and assign to a learner by account ID. Learners see questions without answer keys, can submit answers, and see their score and submission time afterward. Answer keys remain tutor-only. Identification answers are checked case-insensitively with whitespace normalized.
+
+Focus-event monitoring is optional per quiz and off by default. When a tutor enables it, the learner sees what is recorded and must explicitly opt in to monitoring; declining allows an unmonitored attempt. Only quiz-page hidden/focus-loss event types and server timestamps are stored. Tutors see these as review indicators, not proof of cheating. No external tabs, applications, browsing history, outside keystrokes, or screen contents are collected; events never cause automatic penalties.
+
+## Video calls
+
+Video calls are offered only for accepted session requests. The browser requests camera/microphone permission after the learner or tutor joins; the app provides mute, video-disable, and leave controls. Calls are not recorded, and audio/video media is not sent through the Flask server. Signaling is authenticated and limited to the two participants in the accepted request.
+
+Production calls require HTTPS/WSS. WebRTC connectivity depends on the participants’ networks and ICE configuration; peer-to-peer calls will not work across every network. Configure `STUN_URLS` and a TURN service using `TURN_URLS` plus a compatible Coturn REST `TURN_SHARED_SECRET` for reliable connectivity. TURN credentials are short-lived but are necessarily provided to authorized browsers. No STUN or TURN service is enabled by default.
+
+The chat and call WebSocket registries are process-local. Run one app process/instance for this implementation; multiple workers or instances require shared pub/sub signaling. Use a production WSGI server that supports Flask-Sock, with enough threads for expected concurrent WebSocket connections (for example, on Linux: `gunicorn --workers 1 --threads 100 app:app`). Keep WebSocket connections on HTTPS/WSS and configure the host/proxy to pass upgrades.
 
 ## Optional live chat and notifications
 
@@ -78,6 +107,22 @@ The app sends notifications for new messages and session request creation or sta
 | GET | `/session-requests` | Lists requests involving the logged-in user, with sent/received direction and status |
 | GET | `/session-requests/<id>/learner-profile` | Returns the learner's name, email, student number, course, year level, and photo availability to the tutor who received that request |
 | PUT | `/session-requests/<id>` | Tutor accepts/declines a pending request, or the learner cancels it |
+| GET | `/api/resources?subject=<name>` | Learner browses published resources for a selected subject; tutors list their own resources without a subject |
+| POST | `/api/resources` | Tutor uploads a private or published TXT, Markdown, PDF, or DOCX resource |
+| PUT/DELETE | `/api/resources/<id>` | Tutor updates their own resource metadata/visibility or deletes it |
+| GET | `/api/resources/<id>/download` | Permission-checked resource download; learner requests must include the matching `subject` |
+| GET | `/api/quizzes?subject=<name>` | Lists published quizzes for a learner-selected subject; tutors list their own drafts and published quizzes |
+| POST | `/api/resources/<id>/quizzes/generate` | Tutor generates a draft from their resource; requires counts, explicit Google Gemini processing consent, and server configuration |
+| POST | `/api/quizzes/<id>/regenerate` | Tutor regenerates a draft after confirming external processing again |
+| GET/PUT | `/api/quizzes/<id>` | Tutor reviews/edits a draft or answer key; learners get published questions without answer keys |
+| POST | `/api/quizzes/<id>/publish` | Publishes a reviewed two-part quiz |
+| POST | `/api/quizzes/<id>/assign` | Assigns a published quiz to a learner account ID |
+| POST | `/api/quizzes/<id>/attempts` | Authorized learner starts an attempt and sets focus-event consent |
+| POST | `/api/quiz-attempts/<id>/focus-events` | Records only consented hidden/blur event types with server timestamps |
+| POST | `/api/quiz-attempts/<id>/submit` | Saves answers and submission time; returns the score, not the answer key |
+| GET | `/api/quizzes/<id>/attempts` | Tutor sees learner answers, results, and non-proof focus indicators |
+| GET | `/api/session-requests/<id>/video-config` | ICE configuration for a participant in an accepted request |
+| WebSocket | `/ws/calls/<id>` | Authenticated WebRTC signaling for accepted-request participants only |
 | GET | `/tutors/search?subject=<name>` | Ticket search route; supports case-insensitive subject, `day`, optional paired `start_time`/`end_time`, `free=true|false`, and `sort=name|rate_asc|rate_desc` filters |
 | GET | `/api/tutors?subject=<name>` | Backward-compatible alias for tutor search; also supports `rate=free|paid` |
 | GET | `/tutor/subjects` | Lists a tutor's subjects and the shared subject catalog |
@@ -104,10 +149,12 @@ Session requests are proposals only. An accepted request records agreement betwe
 ```
 app.py          Flask API + serves the frontend
 session_requests.py  isolated session-request API blueprint
+resource_library.py  private tutor resource routes and upload validation
+quizzes.py      Gemini generation, review/publish, submissions, and focus-event routes
+call_realtime.py  process-local WebRTC signaling registry
 db.py           database connection + schema setup
 seed.py         sample data
-schema.sql      tables: users, subjects, tutor_subjects, availability, tutor_rates,
-                conversations, messages, and session_requests
+schema.sql      existing tables plus resources, quizzes, assignments, attempts, and focus events
 public/index.html   login, register, dashboard
 public/default-avatar.svg   fallback avatar when a user has not uploaded a photo
 ```

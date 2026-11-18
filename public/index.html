@@ -386,6 +386,40 @@ input[type="checkbox"]{width:18px;min-height:18px;accent-color:var(--blue)}
 .availability-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));align-items:end;gap:12px;margin-top:16px}
 .availability-form label{margin:0}
 .availability-form button{margin-top:8px}
+.resource-section{margin-top:24px;padding-top:20px;border-top:1px solid #e8edf4}
+.resource-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;align-items:end;margin-top:14px}
+.resource-form label{margin:0}
+.resource-form .resource-publish-option{display:flex;align-items:center;gap:8px}
+.resource-form .resource-publish-option input{width:auto}
+.resource-list{display:grid;gap:10px;margin-top:14px}
+.resource-card{padding:15px;border:1px solid #e5ebf3;border-radius:13px;background:#fbfcfe}
+.resource-card h4{margin:0;color:var(--navy)}
+.resource-card p{margin:6px 0;color:var(--muted);font-size:.87rem}
+.resource-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px}
+.resource-edit-form{display:grid;gap:10px;margin-top:12px}
+.resource-edit-form label{margin:0}
+.resource-status{margin:8px 0;color:var(--muted);font-size:.88rem}
+.quiz-generation-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;align-items:end;margin-top:14px}
+.quiz-generation-form label{margin:0}
+.quiz-generation-form .consent-option{grid-column:1/-1;display:flex;align-items:flex-start;gap:8px}
+.quiz-generation-form .consent-option input{width:auto;margin-top:4px}
+.quiz-question-list{display:grid;gap:12px;margin:14px 0}
+.quiz-question-card{padding:14px;border:1px solid #e5ebf3;border-radius:12px;background:#fbfcfe}
+.quiz-question-card h4{margin:0 0 8px;color:var(--navy)}
+.quiz-question-card label{margin-top:8px}
+.quiz-question-options{display:grid;gap:8px}
+.quiz-dialog{width:min(920px,100%);max-height:min(90vh,1000px);overflow:auto;padding:clamp(18px,3vw,30px);border:1px solid #e4e9f1;border-radius:20px;background:#fff;box-shadow:0 24px 70px rgba(8,27,51,.24)}
+.quiz-dialog-header{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;padding-bottom:14px;border-bottom:1px solid #e8edf4}
+.quiz-dialog-header h2{margin:4px 0;color:var(--navy)}
+.quiz-question-card fieldset{margin:0;padding:0;border:0}
+.quiz-question-card legend{margin-bottom:10px;font-weight:750;color:var(--navy)}
+.quiz-choice{display:flex;align-items:flex-start;gap:9px;margin:8px 0}
+.quiz-choice input{width:auto;margin-top:4px}
+.quiz-dialog-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:16px}
+.quiz-focus-notice{padding:13px;border:1px solid #e9d79e;border-radius:12px;background:#fffaf0;color:#59420d}
+.video-call-dialog{width:min(980px,100%);padding:clamp(18px,3vw,30px);border:1px solid #e4e9f1;border-radius:20px;background:#fff;box-shadow:0 24px 70px rgba(8,27,51,.24)}
+.video-call-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:16px 0}
+.video-call-grid video{width:100%;min-height:180px;max-height:55vh;border-radius:14px;background:#101b2a;object-fit:cover}
 .profile-list li{padding:10px 0;border-bottom:1px solid var(--line)}
 .tutor-results{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;margin-top:16px}
 .tutor-result{padding:17px;border:1px solid var(--line);border-radius:14px;background:linear-gradient(150deg,#fff,#f9fbff);transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
@@ -881,6 +915,54 @@ body.modal-open{overflow:hidden}
           <button id="rateSave">Save rate</button>
         </form>
         <div class="err" id="rateErr" role="alert"></div>
+        <section class="resource-section" aria-labelledby="tutorResourceHeading">
+          <h3 id="tutorResourceHeading">Learning resources</h3>
+          <p class="sub">Upload notes and handouts for subjects you teach. Files are private until you choose to make them available.</p>
+          <form id="resourceUploadForm" class="resource-form">
+            <label for="resourceTitle">Title
+              <input id="resourceTitle" maxlength="120" required>
+            </label>
+            <label for="resourceSubject">Subject
+              <select id="resourceSubject" required></select>
+            </label>
+            <label for="resourceFile">File <span class="muted">(TXT, Markdown, PDF, DOCX; up to 5 MB)</span>
+              <input id="resourceFile" type="file" accept=".txt,.md,.pdf,.docx" required>
+            </label>
+            <label for="resourceDescription">Description
+              <textarea id="resourceDescription" maxlength="2000" rows="2"></textarea>
+            </label>
+            <label class="resource-publish-option" for="resourcePublish">
+              <input id="resourcePublish" type="checkbox">
+              Make available to learners
+            </label>
+            <button id="resourceUploadButton">Upload resource</button>
+          </form>
+          <p id="tutorResourceStatus" class="resource-status" role="status"></p>
+          <div id="tutorResourceList" class="resource-list"></div>
+          <h3>Generate a two-part quiz</h3>
+          <p class="sub">Generation uses Google Gemini only when the server is configured. Review all questions and answer keys before publishing.</p>
+          <form id="tutorQuizGenerateForm" class="quiz-generation-form">
+            <label for="quizSourceResource">Source resource
+              <select id="quizSourceResource" required></select>
+            </label>
+            <label for="quizTitle">Quiz title
+              <input id="quizTitle" maxlength="120" required>
+            </label>
+            <label for="quizMcCount">Test 1 · Multiple choice
+              <input id="quizMcCount" type="number" min="1" max="30" value="5" required>
+            </label>
+            <label for="quizIdCount">Test 2 · Identification
+              <input id="quizIdCount" type="number" min="1" max="30" value="5" required>
+            </label>
+            <label class="consent-option" for="quizExternalConsent">
+              <input id="quizExternalConsent" type="checkbox" required>
+              <span>I authorize sending the extracted text of this resource to Google Gemini for quiz generation. Review Google’s data terms before using this for sensitive or restricted materials.</span>
+            </label>
+            <button id="quizGenerateButton">Generate draft</button>
+          </form>
+          <p id="tutorQuizStatus" class="resource-status" role="status"></p>
+          <div id="tutorQuizList" class="resource-list"></div>
+        </section>
       </section>
     </section>
     <section id="findTutorPage" class="dashboard-page hide">
@@ -924,6 +1006,15 @@ body.modal-open{overflow:hidden}
         </form>
         <p id="tutorSearchStatus" class="toast" role="status">Enter a subject to find tutors.</p>
         <div id="tutorSearchResults" class="tutor-results"></div>
+        <section class="resource-section" aria-labelledby="learnerResourceHeading">
+          <h3 id="learnerResourceHeading">Learning resources</h3>
+          <p class="sub">Search for a subject to browse resources shared by tutors who teach it.</p>
+          <p id="learnerResourceStatus" class="resource-status" role="status"></p>
+          <div id="learnerResourceList" class="resource-list"></div>
+          <h3>Published quizzes</h3>
+          <p id="learnerQuizStatus" class="resource-status" role="status"></p>
+          <div id="learnerQuizList" class="resource-list"></div>
+        </section>
       </section>
     </section>
     <section id="messagesView" class="dashboard-page hide">
@@ -1049,6 +1140,45 @@ body.modal-open{overflow:hidden}
   </section>
 </div>
 
+<!-- QUIZ DIALOG -->
+<div id="quizDialog" class="public-profile-overlay hide" role="presentation">
+  <section class="quiz-dialog" role="dialog" aria-modal="true" aria-labelledby="quizDialogTitle">
+    <header class="quiz-dialog-header">
+      <div>
+        <p class="messages-kicker">C.R.A.I. · Quiz</p>
+        <h2 id="quizDialogTitle">Quiz</h2>
+      </div>
+      <button id="quizDialogClose" class="ghost" type="button" aria-label="Close quiz">×</button>
+    </header>
+    <p id="quizDialogStatus" class="resource-status" role="status" aria-live="polite"></p>
+    <div id="quizDialogContent"></div>
+  </section>
+</div>
+
+<!-- VIDEO CALL DIALOG -->
+<div id="videoCallDialog" class="public-profile-overlay hide" role="presentation">
+  <section class="video-call-dialog" role="dialog" aria-modal="true" aria-labelledby="videoCallTitle">
+    <header class="quiz-dialog-header">
+      <div>
+        <p class="messages-kicker">C.R.A.I. · Video call</p>
+        <h2 id="videoCallTitle">Session video call</h2>
+      </div>
+      <button id="videoCallClose" class="ghost" type="button" aria-label="Leave video call">×</button>
+    </header>
+    <p id="videoCallStatus" class="resource-status" role="status" aria-live="polite"></p>
+    <p class="quiz-focus-notice">Your browser will ask for camera and microphone permission. Use the controls to mute, disable video, or leave. Calls are not recorded. Media is exchanged peer-to-peer; restrictive networks may need a configured TURN server, so a connection is not guaranteed on every network.</p>
+    <div class="video-call-grid">
+      <video id="localCallVideo" autoplay playsinline muted aria-label="Your camera video"></video>
+      <video id="remoteCallVideo" autoplay playsinline aria-label="Other participant video"></video>
+    </div>
+    <div class="quiz-dialog-actions">
+      <button id="callMuteButton" class="ghost" type="button">Mute microphone</button>
+      <button id="callVideoButton" class="ghost" type="button">Disable video</button>
+      <button id="leaveCallButton" type="button">Leave call</button>
+    </div>
+  </section>
+</div>
+
 <!-- PUBLIC TUTOR PROFILE DIALOG -->
 <div id="tutorPublicProfile" class="public-profile-overlay hide" role="presentation">
   <section class="public-profile-modal" role="dialog" aria-modal="true" aria-labelledby="publicTutorName">
@@ -1089,7 +1219,12 @@ body.modal-open{overflow:hidden}
               </div>
               <form id="sessionRequestForm" class="session-request-form">
                 <h3>Request a tutoring session</h3>
-                <p>Suggest a time that works for you. The tutor will confirm or decline the request.</p>
+                <p>Suggest a time that works for you. This is only a proposal and does not change the tutor’s published availability. The tutor will confirm or decline the request.</p>
+                <label for="sessionAvailabilitySlot">Published weekly time slot
+                  <select id="sessionAvailabilitySlot">
+                    <option value="">Choose a tutor’s published time</option>
+                  </select>
+                </label>
                 <label for="sessionRequestedFor">Proposed date and time
                   <input id="sessionRequestedFor" type="datetime-local" required>
                 </label>
@@ -1154,6 +1289,12 @@ let profilePhotoUploading = false;
 let learnerProfileReturnFocus = null;
 let currentUserId = null;
 let currentProfileData = null;
+let currentTutorSubjects = [];
+let currentTutorResources = [];
+let activeQuizAttemptId = null;
+let activeQuizMonitorConsent = false;
+let activeQuizFocusHandlers = null;
+let activeVideoCall = null;
 let messagePollTimer = null;
 let messagePollInFlight = false;
 let dashboardClockTimer = null;
@@ -1404,7 +1545,19 @@ async function route() {
   $('learnerBox').classList.toggle('hide', data.role === 'tutor');
   if (data.role !== 'learner') {
     const { ok: subjectsOk, data: subjectsData } = await api('/tutor/subjects');
-    if (subjectsOk) renderTutorSubjects(subjectsData.subjects, subjectsData.available_subjects);
+    if (subjectsOk) {
+      currentTutorSubjects = subjectsData.subjects;
+      renderTutorSubjects(subjectsData.subjects, subjectsData.available_subjects);
+      const uploadSubject = $('resourceSubject');
+      uploadSubject.replaceChildren();
+      currentTutorSubjects.forEach(subject => {
+        const option = document.createElement('option');
+        option.value = subject.id;
+        option.textContent = subject.subject_name;
+        uploadSubject.append(option);
+      });
+      await refreshTutorResources();
+    }
     $('rateSummary').textContent = data.is_free
       ? 'Sessions are free.'
       : `Rate: ${data.rate_per_hour} per hour.`;
@@ -1758,6 +1911,871 @@ function renderTutorSubjects(subjects, availableSubjects) {
   });
 }
 
+function renderResourceSubjectOptions(subjects, selectedId = null) {
+  const select = document.createElement('select');
+  subjects.forEach(subject => {
+    const option = document.createElement('option');
+    option.value = subject.id;
+    option.textContent = subject.subject_name;
+    option.selected = Number(subject.id) === Number(selectedId);
+    select.append(option);
+  });
+  return select;
+}
+
+function formatResourceSize(size) {
+  if (size < 1024) return `${size} B`;
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function appendResourceMetadata(card, resource) {
+  const metadata = document.createElement('p');
+  const uploaded = new Date(`${resource.uploaded_at.replace(' ', 'T')}Z`);
+  const date = Number.isNaN(uploaded.getTime())
+    ? resource.uploaded_at
+    : uploaded.toLocaleDateString();
+  metadata.textContent =
+    `${resource.subject_name} · ${resource.file_type} · ${formatResourceSize(resource.file_size)} · ` +
+    `Uploaded by ${resource.tutor_name} on ${date}`;
+  card.append(metadata);
+  if (resource.description) {
+    const description = document.createElement('p');
+    description.textContent = resource.description;
+    card.append(description);
+  }
+}
+
+async function refreshTutorResources() {
+  const list = $('tutorResourceList');
+  const status = $('tutorResourceStatus');
+  list.replaceChildren();
+  const { ok, data } = await api('/api/resources');
+  if (!ok) {
+    status.textContent = data.error || 'Could not load your resources.';
+    return;
+  }
+  currentTutorResources = data.resources;
+  const sourceSelect = $('quizSourceResource');
+  sourceSelect.replaceChildren();
+  currentTutorResources.forEach(resource => {
+    const option = document.createElement('option');
+    option.value = resource.id;
+    option.textContent = `${resource.title} · ${resource.subject_name}`;
+    sourceSelect.append(option);
+  });
+  status.textContent = data.resources.length
+    ? `${data.resources.length} resource${data.resources.length === 1 ? '' : 's'}`
+    : 'No resources uploaded yet.';
+  data.resources.forEach(resource => {
+    const card = document.createElement('article');
+    card.className = 'resource-card';
+    const heading = document.createElement('h4');
+    heading.textContent = resource.title;
+    card.append(heading);
+    appendResourceMetadata(card, resource);
+    const publication = document.createElement('p');
+    publication.textContent = resource.is_published
+      ? 'Available to learners'
+      : 'Private draft';
+    card.append(publication);
+    const actions = document.createElement('div');
+    actions.className = 'resource-actions';
+    const download = document.createElement('a');
+    download.href = `/api/resources/${resource.id}/download`;
+    download.textContent = 'Download';
+    actions.append(download);
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'ghost';
+    remove.textContent = 'Delete';
+    remove.onclick = async () => {
+      status.textContent = 'Deleting resource…';
+      const result = await api(`/api/resources/${resource.id}`, null, 'DELETE');
+      if (!result.ok) {
+        status.textContent = result.data.error || 'Could not delete resource.';
+        return;
+      }
+      await refreshTutorResources();
+    };
+    actions.append(remove);
+    card.append(actions);
+    const details = document.createElement('details');
+    const summary = document.createElement('summary');
+    summary.textContent = 'Edit details and visibility';
+    const form = document.createElement('form');
+    form.className = 'resource-edit-form';
+    const titleLabel = document.createElement('label');
+    titleLabel.textContent = 'Title';
+    const titleInput = document.createElement('input');
+    titleInput.maxLength = 120;
+    titleInput.required = true;
+    titleInput.value = resource.title;
+    titleLabel.append(titleInput);
+    const subjectLabel = document.createElement('label');
+    subjectLabel.textContent = 'Subject';
+    const subjectSelect = renderResourceSubjectOptions(
+      currentTutorSubjects,
+      resource.subject_id
+    );
+    subjectLabel.append(subjectSelect);
+    const descriptionLabel = document.createElement('label');
+    descriptionLabel.textContent = 'Description';
+    const descriptionInput = document.createElement('textarea');
+    descriptionInput.maxLength = 2000;
+    descriptionInput.rows = 2;
+    descriptionInput.value = resource.description;
+    descriptionLabel.append(descriptionInput);
+    const publishLabel = document.createElement('label');
+    publishLabel.className = 'resource-publish-option';
+    const publishInput = document.createElement('input');
+    publishInput.type = 'checkbox';
+    publishInput.checked = Boolean(resource.is_published);
+    publishLabel.append(publishInput, document.createTextNode('Available to learners'));
+    const save = document.createElement('button');
+    save.type = 'submit';
+    save.textContent = 'Save details';
+    form.append(titleLabel, subjectLabel, descriptionLabel, publishLabel, save);
+    form.onsubmit = async event => {
+      event.preventDefault();
+      const result = await api(`/api/resources/${resource.id}`, {
+        title: titleInput.value,
+        subject_id: Number(subjectSelect.value),
+        description: descriptionInput.value,
+        is_published: publishInput.checked
+      }, 'PUT');
+      if (!result.ok) {
+        status.textContent = result.data.error || 'Could not update resource.';
+        return;
+      }
+      await refreshTutorResources();
+    };
+    details.append(summary, form);
+    card.append(details);
+    list.append(card);
+  });
+  await refreshTutorQuizzes();
+}
+
+async function loadLearnerResources(subject) {
+  const list = $('learnerResourceList');
+  const status = $('learnerResourceStatus');
+  list.replaceChildren();
+  status.textContent = 'Loading shared resources…';
+  const { ok, data } = await api(`/api/resources?subject=${encodeURIComponent(subject)}`);
+  if (!ok) {
+    status.textContent = data.error || 'Could not load resources.';
+    return;
+  }
+  status.textContent = data.resources.length
+    ? `${data.resources.length} shared resource${data.resources.length === 1 ? '' : 's'} for ${subject}`
+    : `No resources are currently shared for ${subject}.`;
+  data.resources.forEach(resource => {
+    const card = document.createElement('article');
+    card.className = 'resource-card';
+    const heading = document.createElement('h4');
+    heading.textContent = resource.title;
+    card.append(heading);
+    appendResourceMetadata(card, resource);
+    const download = document.createElement('a');
+    download.href =
+      `/api/resources/${resource.id}/download?subject=${encodeURIComponent(resource.subject_name)}`;
+    download.textContent = 'Download resource';
+    card.append(download);
+    list.append(card);
+  });
+  await loadLearnerQuizzes(subject);
+}
+
+async function refreshTutorQuizzes() {
+  const list = $('tutorQuizList');
+  const status = $('tutorQuizStatus');
+  list.replaceChildren();
+  const { ok, data } = await api('/api/quizzes');
+  if (!ok) {
+    status.textContent = data.error || 'Could not load your quizzes.';
+    return;
+  }
+  status.textContent = data.quizzes.length
+    ? `${data.quizzes.length} quiz${data.quizzes.length === 1 ? '' : 'zes'}`
+    : 'No quizzes yet.';
+  data.quizzes.forEach(quiz => {
+    const card = document.createElement('article');
+    card.className = 'resource-card';
+    const heading = document.createElement('h4');
+    heading.textContent = quiz.title;
+    const details = document.createElement('p');
+    details.textContent =
+      `${quiz.resource_title} · ${quiz.subject_name} · ${quiz.question_count} questions · ${quiz.status}`;
+    const actions = document.createElement('div');
+    actions.className = 'resource-actions';
+    const review = document.createElement('button');
+    review.type = 'button';
+    review.className = 'ghost';
+    review.textContent = quiz.status === 'draft' ? 'Review draft' : 'View answer key';
+    review.onclick = () => openTutorQuiz(quiz.id);
+    actions.append(review);
+    if (quiz.status === 'published') {
+      const results = document.createElement('button');
+      results.type = 'button';
+      results.className = 'ghost';
+      results.textContent = 'View learner results';
+      results.onclick = () => showTutorQuizAttempts(quiz.id, quiz.title);
+      actions.append(results);
+      const assignLabel = document.createElement('label');
+      assignLabel.textContent = 'Assign to learner ID';
+      const learnerId = document.createElement('input');
+      learnerId.type = 'number';
+      learnerId.min = '1';
+      learnerId.step = '1';
+      learnerId.inputMode = 'numeric';
+      learnerId.required = true;
+      assignLabel.append(learnerId);
+      const assign = document.createElement('button');
+      assign.type = 'button';
+      assign.className = 'ghost';
+      assign.textContent = 'Assign quiz';
+      assign.onclick = async () => {
+        const id = Number(learnerId.value);
+        if (!Number.isSafeInteger(id) || id < 1) {
+          status.textContent = 'Enter a valid learner ID.';
+          return;
+        }
+        const result = await api(`/api/quizzes/${quiz.id}/assign`, { learner_id: id });
+        status.textContent = result.ok
+          ? 'Quiz assigned.'
+          : result.data.error || 'Could not assign quiz.';
+      };
+      actions.append(assignLabel, assign);
+    }
+    card.append(heading, details, actions);
+    list.append(card);
+  });
+}
+
+function openQuizDialog(title, status = '') {
+  $('quizDialogTitle').textContent = title;
+  $('quizDialogStatus').textContent = status;
+  $('quizDialogContent').replaceChildren();
+  $('quizDialog').classList.remove('hide');
+  document.body.classList.add('modal-open');
+  $('quizDialogClose').focus();
+}
+
+function cleanupQuizFocusMonitoring() {
+  if (activeQuizFocusHandlers) {
+    document.removeEventListener('visibilitychange', activeQuizFocusHandlers.onVisibility);
+    window.removeEventListener('blur', activeQuizFocusHandlers.onBlur);
+    activeQuizFocusHandlers = null;
+  }
+  activeQuizAttemptId = null;
+  activeQuizMonitorConsent = false;
+}
+
+function closeQuizDialog() {
+  cleanupQuizFocusMonitoring();
+  $('quizDialog').classList.add('hide');
+  document.body.classList.remove('modal-open');
+}
+
+async function openTutorQuiz(quizId, statusMessage = '') {
+  const { ok, data } = await api(`/api/quizzes/${quizId}`);
+  if (!ok) {
+    $('tutorQuizStatus').textContent = data.error || 'Could not load quiz.';
+    return;
+  }
+  const quiz = data.quiz;
+  openQuizDialog(quiz.title, statusMessage);
+  const content = $('quizDialogContent');
+  if (quiz.status === 'published') {
+    const notice = document.createElement('p');
+    notice.className = 'quiz-focus-notice';
+    notice.textContent =
+      'Learners see their score after submission. Answer keys and source excerpts are shown only to you, the tutor.';
+    content.append(notice);
+    quiz.questions.forEach(question => {
+      const card = document.createElement('article');
+      card.className = 'quiz-question-card';
+      const heading = document.createElement('h3');
+      heading.textContent = `Test ${question.test_number} · Question ${question.position}`;
+      const prompt = document.createElement('p');
+      prompt.textContent = question.question;
+      const answer = document.createElement('p');
+      answer.textContent = question.test_number === 1
+        ? `Answer: ${question.options[Number(question.answer_key)] || ''}`
+        : `Answer: ${question.answer_key}`;
+      const evidence = document.createElement('p');
+      evidence.textContent = `Source excerpt: ${question.source_excerpt}`;
+      card.append(heading, prompt, answer, evidence);
+      if (question.test_number === 1) {
+        const choices = document.createElement('ol');
+        question.options.forEach(option => {
+          const item = document.createElement('li');
+          item.textContent = option;
+          choices.append(item);
+        });
+        card.append(choices);
+      }
+      content.append(card);
+    });
+    const assignmentInfo = document.createElement('p');
+    assignmentInfo.className = 'resource-status';
+    assignmentInfo.textContent = `Focus-event monitoring is ${quiz.focus_monitoring_enabled ? 'available when enabled for the attempt' : 'off'}. It is never proof of cheating or an automatic penalty.`;
+    content.append(assignmentInfo);
+    return;
+  }
+
+  const form = document.createElement('form');
+  const titleLabel = document.createElement('label');
+  titleLabel.textContent = 'Quiz title';
+  const titleInput = document.createElement('input');
+  titleInput.maxLength = 120;
+  titleInput.required = true;
+  titleInput.value = quiz.title;
+  titleLabel.append(titleInput);
+  form.append(titleLabel);
+  const questionBlocks = [];
+  quiz.questions.forEach(question => {
+    const card = document.createElement('article');
+    card.className = 'quiz-question-card';
+    const heading = document.createElement('h3');
+    heading.textContent = `Test ${question.test_number} · Question ${question.position}`;
+    const promptLabel = document.createElement('label');
+    promptLabel.textContent = 'Question';
+    const prompt = document.createElement('textarea');
+    prompt.rows = 2;
+    prompt.maxLength = 1000;
+    prompt.required = true;
+    prompt.value = question.question;
+    promptLabel.append(prompt);
+    card.append(heading, promptLabel);
+    const evidenceLabel = document.createElement('label');
+    evidenceLabel.textContent = 'Exact source excerpt supporting the answer';
+    const evidence = document.createElement('textarea');
+    evidence.rows = 2;
+    evidence.maxLength = 1000;
+    evidence.required = true;
+    evidence.value = question.source_excerpt;
+    evidenceLabel.append(evidence);
+    card.append(evidenceLabel);
+    let options = [];
+    let answer;
+    if (question.test_number === 1) {
+      const optionsWrap = document.createElement('div');
+      optionsWrap.className = 'quiz-question-options';
+      question.options.forEach((value, index) => {
+        const label = document.createElement('label');
+        label.textContent = `Option ${index + 1}`;
+        const input = document.createElement('input');
+        input.maxLength = 250;
+        input.required = true;
+        input.value = value;
+        label.append(input);
+        options.push(input);
+        optionsWrap.append(label);
+      });
+      card.append(optionsWrap);
+      const answerLabel = document.createElement('label');
+      answerLabel.textContent = 'Correct answer';
+      answer = document.createElement('select');
+      question.options.forEach((option, index) => {
+        const choice = document.createElement('option');
+        choice.value = index;
+        choice.textContent = option;
+        choice.selected = index === Number(question.answer_key);
+        answer.append(choice);
+      });
+      answerLabel.append(answer);
+      card.append(answerLabel);
+      options.forEach(input => {
+        input.oninput = () => {
+          const selected = answer.value;
+          const selectedText = options[Number(selected)]?.value;
+          answer.replaceChildren();
+          options.forEach((option, index) => {
+            const choice = document.createElement('option');
+            choice.value = index;
+            choice.textContent = option.value.trim() || `Option ${index + 1}`;
+            choice.selected = index === Number(selected);
+            answer.append(choice);
+          });
+          if (!selectedText) answer.value = selected;
+        };
+      });
+    } else {
+      const answerLabel = document.createElement('label');
+      answerLabel.textContent = 'Correct identification answer';
+      answer = document.createElement('input');
+      answer.maxLength = 250;
+      answer.required = true;
+      answer.value = question.answer_key;
+      answerLabel.append(answer);
+      card.append(answerLabel);
+    }
+    questionBlocks.push({ question, prompt, evidence, options, answer });
+    form.append(card);
+  });
+  const monitorLabel = document.createElement('label');
+  monitorLabel.className = 'quiz-choice';
+  const monitor = document.createElement('input');
+  monitor.type = 'checkbox';
+  monitor.checked = quiz.focus_monitoring_enabled;
+  monitorLabel.append(
+    monitor,
+    document.createTextNode(
+      'Offer optional, consent-based focus-event monitoring for this quiz (off by default).'
+    )
+  );
+  form.append(monitorLabel);
+  const save = document.createElement('button');
+  save.type = 'submit';
+  save.textContent = 'Save reviewed draft';
+  form.append(save);
+  const saveDraft = async () => {
+    const questions = questionBlocks.map(({ question, prompt, evidence, options, answer }) => ({
+      test_number: question.test_number,
+      question: prompt.value,
+      source_excerpt: evidence.value,
+      options: question.test_number === 1 ? options.map(option => option.value) : [],
+      answer_key: question.test_number === 1 ? Number(answer.value) : answer.value
+    }));
+    save.disabled = true;
+    const result = await api(`/api/quizzes/${quiz.id}`, {
+      title: titleInput.value,
+      questions,
+      focus_monitoring_enabled: monitor.checked
+    }, 'PUT');
+    save.disabled = false;
+    if (!result.ok) {
+      $('quizDialogStatus').textContent = result.data.error || 'Could not save quiz.';
+      return false;
+    }
+    $('quizDialogStatus').textContent = 'Draft saved.';
+    await refreshTutorQuizzes();
+    return true;
+  };
+  form.onsubmit = async event => {
+    event.preventDefault();
+    if (await saveDraft()) {
+      await openTutorQuiz(quiz.id, 'Draft saved. Review the keys and excerpts before publishing.');
+    }
+  };
+  content.append(form);
+
+  const actions = document.createElement('div');
+  actions.className = 'quiz-dialog-actions';
+  const publish = document.createElement('button');
+  publish.type = 'button';
+  publish.textContent = 'Save and publish';
+  publish.onclick = async () => {
+    if (!form.reportValidity()) return;
+    publish.disabled = true;
+    const saved = await saveDraft();
+    publish.disabled = false;
+    if (!saved) return;
+    const result = await api(`/api/quizzes/${quiz.id}/publish`, {}, 'POST');
+    if (!result.ok) {
+      $('quizDialogStatus').textContent = result.data.error || 'Could not publish quiz.';
+      return;
+    }
+    closeQuizDialog();
+    await refreshTutorQuizzes();
+    $('tutorQuizStatus').textContent = 'Quiz published. Learners can now access it by subject or assignment.';
+  };
+  const discard = document.createElement('button');
+  discard.type = 'button';
+  discard.className = 'ghost';
+  discard.textContent = 'Discard draft';
+  discard.onclick = async () => {
+    const result = await api(`/api/quizzes/${quiz.id}`, null, 'DELETE');
+    if (!result.ok) {
+      $('quizDialogStatus').textContent = result.data.error || 'Could not discard draft.';
+      return;
+    }
+    closeQuizDialog();
+    await refreshTutorQuizzes();
+  };
+  actions.append(publish, discard);
+  content.append(actions);
+
+  const regenerate = document.createElement('details');
+  const regenerateSummary = document.createElement('summary');
+  regenerateSummary.textContent = 'Regenerate both tests';
+  const regenerateForm = document.createElement('form');
+  regenerateForm.className = 'quiz-generation-form';
+  const mcCount = quiz.questions.filter(question => question.test_number === 1).length;
+  const idCount = quiz.questions.filter(question => question.test_number === 2).length;
+  const mcLabel = document.createElement('label');
+  mcLabel.textContent = 'Test 1 question count';
+  const mcInput = document.createElement('input');
+  mcInput.type = 'number';
+  mcInput.min = '1';
+  mcInput.max = '30';
+  mcInput.value = mcCount || 1;
+  mcLabel.append(mcInput);
+  const idLabel = document.createElement('label');
+  idLabel.textContent = 'Test 2 question count';
+  const idInput = document.createElement('input');
+  idInput.type = 'number';
+  idInput.min = '1';
+  idInput.max = '30';
+  idInput.value = idCount || 1;
+  idLabel.append(idInput);
+  const consentLabel = document.createElement('label');
+  consentLabel.className = 'consent-option';
+  const consent = document.createElement('input');
+  consent.type = 'checkbox';
+  consent.required = true;
+  consentLabel.append(
+    consent,
+    document.createTextNode('I authorize sending this resource text to Google Gemini again.')
+  );
+  const regenerateButton = document.createElement('button');
+  regenerateButton.textContent = 'Regenerate draft';
+  regenerateForm.append(mcLabel, idLabel, consentLabel, regenerateButton);
+  regenerateForm.onsubmit = async event => {
+    event.preventDefault();
+    const result = await api(`/api/quizzes/${quiz.id}/regenerate`, {
+      multiple_choice_count: Number(mcInput.value),
+      identification_count: Number(idInput.value),
+      external_ai_consent: consent.checked
+    });
+    if (!result.ok) {
+      $('quizDialogStatus').textContent = result.data.error || 'Could not regenerate quiz.';
+      return;
+    }
+    await refreshTutorQuizzes();
+    await openTutorQuiz(quiz.id, 'Regenerated draft. Review every question and answer key.');
+  };
+  regenerate.append(regenerateSummary, regenerateForm);
+  content.append(regenerate);
+}
+
+async function showTutorQuizAttempts(quizId, title) {
+  const [attemptResult, quizResult] = await Promise.all([
+    api(`/api/quizzes/${quizId}/attempts`),
+    api(`/api/quizzes/${quizId}`)
+  ]);
+  if (!attemptResult.ok || !quizResult.ok) {
+    $('tutorQuizStatus').textContent =
+      attemptResult.data.error || quizResult.data.error || 'Could not load quiz results.';
+    return;
+  }
+  const attempts = attemptResult.data.attempts;
+  const questions = quizResult.data.quiz.questions;
+  openQuizDialog(`${title} · Learner results`);
+  const content = $('quizDialogContent');
+  const notice = document.createElement('p');
+  notice.className = 'quiz-focus-notice';
+  notice.textContent =
+    'Hidden/focus events are review indicators only. They do not prove misconduct and must not trigger automatic penalties.';
+  content.append(notice);
+  if (!attempts.length) {
+    $('quizDialogStatus').textContent = 'No learner attempts yet.';
+    return;
+  }
+  attempts.forEach(attempt => {
+    const card = document.createElement('article');
+    card.className = 'quiz-question-card';
+    const heading = document.createElement('h3');
+    heading.textContent = attempt.learner_name;
+    const score = document.createElement('p');
+    score.textContent = attempt.submitted_at
+      ? `Score: ${attempt.score}/${attempt.total_questions} · Submitted ${attempt.submitted_at}`
+      : `Started ${attempt.started_at} · Not submitted`;
+    const focus = document.createElement('p');
+    focus.textContent = attempt.focus_consent
+      ? `${attempt.focus_events.length} focus indicator${attempt.focus_events.length === 1 ? '' : 's'} recorded`
+      : 'No focus-event monitoring was enabled for this attempt.';
+    card.append(heading, score, focus);
+    if (attempt.submitted_at) {
+      questions.forEach(question => {
+        const answer = attempt.answers[String(question.id)];
+        const answerText = answer === null || answer === undefined
+          ? 'No answer'
+          : question.test_number === 1
+            ? question.options[answer] || 'Invalid choice'
+            : answer;
+        const keyText = question.test_number === 1
+          ? question.options[Number(question.answer_key)]
+          : question.answer_key;
+        const answerRow = document.createElement('p');
+        answerRow.textContent =
+          `Test ${question.test_number}, Q${question.position}: ${answerText} · Key: ${keyText}`;
+        card.append(answerRow);
+      });
+    }
+    attempt.focus_events.forEach(event => {
+      const item = document.createElement('p');
+      item.textContent = `${event.event_type === 'hidden' ? 'Quiz page hidden' : 'Quiz page lost focus'} · ${event.occurred_at}`;
+      card.append(item);
+    });
+    content.append(card);
+  });
+}
+
+async function loadLearnerQuizzes(subject) {
+  const list = $('learnerQuizList');
+  const status = $('learnerQuizStatus');
+  list.replaceChildren();
+  status.textContent = 'Loading published quizzes…';
+  const { ok, data } = await api(`/api/quizzes?subject=${encodeURIComponent(subject)}`);
+  if (!ok) {
+    status.textContent = data.error || 'Could not load quizzes.';
+    return;
+  }
+  status.textContent = data.quizzes.length
+    ? `${data.quizzes.length} published quiz${data.quizzes.length === 1 ? '' : 'zes'}`
+    : `No published quizzes for ${subject}.`;
+  data.quizzes.forEach(quiz => {
+    const card = document.createElement('article');
+    card.className = 'resource-card';
+    const heading = document.createElement('h4');
+    heading.textContent = quiz.title;
+    const details = document.createElement('p');
+    details.textContent =
+      `${quiz.subject_name} · ${quiz.resource_title} · ${quiz.tutor_name} · ${quiz.question_count} questions`;
+    const take = document.createElement('button');
+    take.type = 'button';
+    take.textContent = quiz.assigned ? 'Start assigned quiz' : 'Take quiz';
+    take.onclick = () => openLearnerQuiz(quiz.id, subject);
+    card.append(heading, details, take);
+    list.append(card);
+  });
+}
+
+async function openLearnerQuiz(quizId, subject) {
+  const { ok, data } = await api(
+    `/api/quizzes/${quizId}?subject=${encodeURIComponent(subject)}`
+  );
+  if (!ok) {
+    $('learnerQuizStatus').textContent = data.error || 'Could not load quiz.';
+    return;
+  }
+  const quiz = data.quiz;
+  openQuizDialog(quiz.title);
+  const content = $('quizDialogContent');
+  const introduction = document.createElement('p');
+  introduction.textContent =
+    `Two tests based on ${quiz.resource_title}. Your score will appear after you submit. The answer key is not shown to learners.`;
+  content.append(introduction);
+  if (quiz.focus_monitoring_enabled) {
+    const notice = document.createElement('div');
+    notice.className = 'quiz-focus-notice';
+    notice.textContent =
+      'Optional focus monitoring: if you opt in, the app records only when this quiz page becomes hidden or loses focus, with timestamps. It cannot see other tabs, apps, browsing history, keystrokes outside this quiz, or screen contents. These are review indicators, not proof of cheating and never cause automatic penalties. You may decline and take an unmonitored attempt. Contact your tutor if you need an accommodation.';
+    const consentLabel = document.createElement('label');
+    consentLabel.className = 'quiz-choice';
+    const consent = document.createElement('input');
+    consent.type = 'checkbox';
+    consentLabel.append(
+      consent,
+      document.createTextNode('I agree to focus-event recording for this attempt.')
+    );
+    const startMonitored = document.createElement('button');
+    startMonitored.type = 'button';
+    startMonitored.textContent = 'Start with monitoring';
+    startMonitored.disabled = true;
+    consent.onchange = () => {
+      startMonitored.disabled = !consent.checked;
+    };
+    startMonitored.onclick = () => beginLearnerQuiz(quiz, subject, true);
+    const startUnmonitored = document.createElement('button');
+    startUnmonitored.type = 'button';
+    startUnmonitored.className = 'ghost';
+    startUnmonitored.textContent = 'Continue without monitoring';
+    startUnmonitored.onclick = () => beginLearnerQuiz(quiz, subject, false);
+    content.append(notice, consentLabel, startMonitored, startUnmonitored);
+  } else {
+    const start = document.createElement('button');
+    start.type = 'button';
+    start.textContent = 'Start unmonitored quiz';
+    start.onclick = () => beginLearnerQuiz(quiz, subject, false);
+    content.append(start);
+  }
+}
+
+async function beginLearnerQuiz(quiz, subject, monitorConsent) {
+  const { ok, data } = await api(
+    `/api/quizzes/${quiz.id}/attempts?subject=${encodeURIComponent(subject)}`,
+    { focus_consent: monitorConsent }
+  );
+  if (!ok) {
+    $('quizDialogStatus').textContent = data.error || 'Could not start quiz.';
+    return;
+  }
+  activeQuizAttemptId = data.attempt_id;
+  activeQuizMonitorConsent = data.focus_monitoring_enabled;
+  const content = $('quizDialogContent');
+  content.replaceChildren();
+  const form = document.createElement('form');
+  const tests = [1, 2];
+  tests.forEach(testNumber => {
+    const section = document.createElement('section');
+    const heading = document.createElement('h3');
+    heading.textContent = testNumber === 1 ? 'Test 1 · Multiple choice' : 'Test 2 · Identification';
+    section.append(heading);
+    quiz.questions.filter(question => question.test_number === testNumber).forEach(question => {
+      const card = document.createElement('article');
+      card.className = 'quiz-question-card';
+      const fieldset = document.createElement('fieldset');
+      const legend = document.createElement('legend');
+      legend.textContent = question.question;
+      fieldset.append(legend);
+      if (testNumber === 1) {
+        question.options.forEach((option, index) => {
+          const label = document.createElement('label');
+          label.className = 'quiz-choice';
+          const input = document.createElement('input');
+          input.type = 'radio';
+          input.name = `question-${question.id}`;
+          input.value = index;
+          label.append(input, document.createTextNode(option));
+          fieldset.append(label);
+        });
+      } else {
+        const answer = document.createElement('input');
+        answer.type = 'text';
+        answer.maxLength = 250;
+        answer.dataset.questionId = question.id;
+        answer.autocomplete = 'off';
+        answer.setAttribute('aria-label', 'Identification answer');
+        fieldset.append(answer);
+      }
+      card.append(fieldset);
+      section.append(card);
+    });
+    form.append(section);
+  });
+  const submit = document.createElement('button');
+  submit.type = 'submit';
+  submit.textContent = 'Submit quiz';
+  form.append(submit);
+  form.onsubmit = async event => {
+    event.preventDefault();
+    submit.disabled = true;
+    const answers = {};
+    quiz.questions.forEach(question => {
+      if (question.test_number === 1) {
+        const selected = form.querySelector(`input[name="question-${question.id}"]:checked`);
+        if (selected) answers[String(question.id)] = Number(selected.value);
+      } else {
+        const field = form.querySelector(`[data-question-id="${question.id}"]`);
+        if (field.value.trim()) answers[String(question.id)] = field.value.trim();
+      }
+    });
+    const result = await api(`/api/quiz-attempts/${activeQuizAttemptId}/submit`, { answers });
+    if (!result.ok) {
+      submit.disabled = false;
+      $('quizDialogStatus').textContent = result.data.error || 'Could not submit quiz.';
+      return;
+    }
+    cleanupQuizFocusMonitoring();
+    content.replaceChildren();
+    const resultMessage = document.createElement('p');
+    resultMessage.className = 'quiz-focus-notice';
+    resultMessage.textContent =
+      `Submitted. Your score is ${result.data.score}/${result.data.total_questions}. The answer key remains available only to the tutor.`;
+    content.append(resultMessage);
+  };
+  content.append(form);
+  if (activeQuizMonitorConsent) {
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') recordQuizFocusEvent('hidden');
+    };
+    const onBlur = () => {
+      if (document.visibilityState !== 'hidden') recordQuizFocusEvent('blur');
+    };
+    activeQuizFocusHandlers = { onVisibility, onBlur };
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('blur', onBlur);
+  }
+  $('quizDialogStatus').textContent = activeQuizMonitorConsent
+    ? 'Focus monitoring is active only for this quiz page. You can leave or request an accommodation at any time.'
+    : 'This attempt is unmonitored.';
+}
+
+async function recordQuizFocusEvent(eventType) {
+  if (!activeQuizAttemptId || !activeQuizMonitorConsent) return;
+  const { ok, data } = await api(
+    `/api/quiz-attempts/${activeQuizAttemptId}/focus-events`,
+    { events: [{ event_type: eventType }] }
+  );
+  if (!ok && activeQuizAttemptId) {
+    $('quizDialogStatus').textContent =
+      data.error || 'A focus indicator could not be recorded. No penalty is applied.';
+  }
+}
+
+$('tutorQuizGenerateForm').onsubmit = async event => {
+  event.preventDefault();
+  const button = $('quizGenerateButton');
+  const status = $('tutorQuizStatus');
+  button.disabled = true;
+  status.textContent = 'Generating a draft from the selected source…';
+  const resourceId = Number($('quizSourceResource').value);
+  const { ok, data } = await api(`/api/resources/${resourceId}/quizzes/generate`, {
+    title: $('quizTitle').value,
+    multiple_choice_count: Number($('quizMcCount').value),
+    identification_count: Number($('quizIdCount').value),
+    external_ai_consent: $('quizExternalConsent').checked
+  });
+  button.disabled = false;
+  if (!ok) {
+    status.textContent = data.error || 'Quiz generation failed.';
+    return;
+  }
+  status.textContent = data.message;
+  await refreshTutorQuizzes();
+  await openTutorQuiz(data.id, data.message);
+};
+
+$('quizDialogClose').onclick = closeQuizDialog;
+$('quizDialog').onclick = event => {
+  if (event.target === $('quizDialog')) closeQuizDialog();
+};
+$('videoCallClose').onclick = () => closeVideoCall();
+$('leaveCallButton').onclick = () => closeVideoCall();
+$('callMuteButton').onclick = toggleCallAudio;
+$('callVideoButton').onclick = toggleCallVideo;
+$('videoCallDialog').onclick = event => {
+  if (event.target === $('videoCallDialog')) closeVideoCall();
+};
+
+$('resourceUploadForm').onsubmit = async event => {
+  event.preventDefault();
+  const status = $('tutorResourceStatus');
+  const uploadButton = $('resourceUploadButton');
+  const file = $('resourceFile').files[0];
+  if (!file) {
+    status.textContent = 'Choose a resource file to upload.';
+    return;
+  }
+  const form = new FormData();
+  form.append('title', $('resourceTitle').value);
+  form.append('description', $('resourceDescription').value);
+  form.append('subject_id', $('resourceSubject').value);
+  form.append('is_published', $('resourcePublish').checked ? '1' : '0');
+  form.append('file', file);
+  uploadButton.disabled = true;
+  status.textContent = 'Uploading resource…';
+  try {
+    const response = await fetch('/api/resources', { method: 'POST', body: form });
+    const data = await response.json();
+    if (!response.ok) {
+      status.textContent = data.error || 'Could not upload resource.';
+      return;
+    }
+    $('resourceUploadForm').reset();
+    status.textContent = 'Resource uploaded.';
+    await refreshTutorResources();
+  } catch {
+    status.textContent = 'Could not upload resource. Check your connection and try again.';
+  } finally {
+    uploadButton.disabled = false;
+  }
+};
+
 $('tutorSubjectForm').onsubmit = async e => {
   e.preventDefault();
   const subject_name = $('tutorSubjectName').value.trim();
@@ -1767,6 +2785,18 @@ $('tutorSubjectForm').onsubmit = async e => {
   if (ok) { $('tutorSubjectForm').reset(); await route(); }
   else $('tutorSubjectErr').textContent = data.error || 'Could not add subject';
 };
+
+function nextDateForSlot(day, time) {
+  const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const [hours, minutes] = time.split(':').map(Number);
+  const earliest = new Date(Date.now() + 60 * 60 * 1000);
+  const target = new Date(earliest);
+  target.setHours(hours, minutes, 0, 0);
+  let dayDifference = (weekdays.indexOf(day) - earliest.getDay() + 7) % 7;
+  target.setDate(earliest.getDate() + dayDifference);
+  if (target <= earliest) target.setDate(target.getDate() + 7);
+  return target;
+}
 
 async function loadPublicTutorProfile(tutorId) {
   publicTutorId = Number(tutorId);
@@ -1815,11 +2845,27 @@ async function loadPublicTutorProfile(tutorId) {
   }
   const availability = $('publicTutorAvailability');
   availability.replaceChildren();
+  const slotSelect = $('sessionAvailabilitySlot');
+  slotSelect.replaceChildren();
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = data.availability.length
+    ? 'Choose a tutor’s published time'
+    : 'No weekly time listed';
+  slotSelect.append(placeholder);
+  slotSelect.required = data.availability.length > 0;
   if (data.availability.length) {
     data.availability.forEach(slot => {
       const item = document.createElement('li');
       item.textContent = `${slot.day}: ${slot.start_time}–${slot.end_time}`;
       availability.append(item);
+      const option = document.createElement('option');
+      option.value = slot.id;
+      option.dataset.day = slot.day;
+      option.dataset.start = slot.start_time;
+      option.dataset.end = slot.end_time;
+      option.textContent = `${slot.day}, ${slot.start_time}–${slot.end_time}`;
+      slotSelect.append(option);
     });
   } else {
     const item = document.createElement('li');
@@ -1832,6 +2878,14 @@ async function loadPublicTutorProfile(tutorId) {
   $('messageTutorStatus').textContent = '';
   $('messageTutorLogin').classList.add('hide');
 }
+
+$('sessionAvailabilitySlot').onchange = () => {
+  const option = $('sessionAvailabilitySlot').selectedOptions[0];
+  if (!option?.dataset.day) return;
+  $('sessionRequestedFor').value = toLocalDateTimeValue(
+    nextDateForSlot(option.dataset.day, option.dataset.start)
+  );
+};
 
 function closeTutorProfile() {
   $('tutorPublicProfile').classList.add('hide');
@@ -1849,7 +2903,11 @@ $('tutorPublicProfile').onclick = event => {
   if (event.target === $('tutorPublicProfile')) closeTutorProfile();
 };
 document.addEventListener('keydown', event => {
-  if (event.key === 'Escape' && !$('profilePhotoDialog').classList.contains('hide')) {
+  if (event.key === 'Escape' && !$('videoCallDialog').classList.contains('hide')) {
+    closeVideoCall();
+  } else if (event.key === 'Escape' && !$('quizDialog').classList.contains('hide')) {
+    closeQuizDialog();
+  } else if (event.key === 'Escape' && !$('profilePhotoDialog').classList.contains('hide')) {
     closeProfilePhotoDialog();
   } else if (event.key === 'Escape' && !$('learnerProfileDialog').classList.contains('hide')) {
     closeLearnerProfile();
@@ -2189,6 +3247,207 @@ function closeLearnerProfile() {
   learnerProfileReturnFocus = null;
 }
 
+function stopVideoCallMedia(call) {
+  call.closed = true;
+  if (call.localStream) call.localStream.getTracks().forEach(track => track.stop());
+  if (call.peerConnection) call.peerConnection.close();
+  if (call.socket && call.socket.readyState < WebSocket.CLOSING) call.socket.close();
+  $('localCallVideo').srcObject = null;
+  $('remoteCallVideo').srcObject = null;
+  if (activeVideoCall === call) activeVideoCall = null;
+}
+
+function closeVideoCall(notifyPeer = true) {
+  const call = activeVideoCall;
+  if (call && notifyPeer && call.socket.readyState === WebSocket.OPEN) {
+    call.socket.send(JSON.stringify({ type: 'hangup' }));
+  }
+  if (call) stopVideoCallMedia(call);
+  $('videoCallDialog').classList.add('hide');
+  document.body.classList.remove('modal-open');
+}
+
+function sendCallSignal(call, type, payload) {
+  const message = { type, payload };
+  if (call.socket.readyState === WebSocket.OPEN) {
+    call.socket.send(JSON.stringify(message));
+  } else {
+    call.pendingSignals.push(message);
+  }
+}
+
+async function createCallOffer(call) {
+  if (!call.isTutor || call.offerStarted || call.closed) return;
+  call.offerStarted = true;
+  try {
+    const offer = await call.peerConnection.createOffer();
+    await call.peerConnection.setLocalDescription(offer);
+    sendCallSignal(call, 'offer', call.peerConnection.localDescription.toJSON());
+    $('videoCallStatus').textContent = 'Calling the learner…';
+  } catch {
+    $('videoCallStatus').textContent = 'Could not start the video connection. Leave and try again.';
+  }
+}
+
+async function applyPendingCallCandidates(call) {
+  for (const candidate of call.pendingCandidates.splice(0)) {
+    await call.peerConnection.addIceCandidate(candidate);
+  }
+}
+
+async function handleCallSignal(call, message) {
+  if (!message || typeof message !== 'object') return;
+  try {
+    if (message.type === 'connected') {
+      call.isTutor = Boolean(message.is_tutor);
+      if (!call.iceServers.length) {
+        $('videoCallStatus').textContent =
+          'No STUN/TURN server is configured. A connection may work on some networks, but TURN is needed for reliable connectivity.';
+      } else {
+        $('videoCallStatus').textContent = 'Connected to call signaling; waiting for the other participant…';
+      }
+      if (call.isTutor && message.peer_present) await createCallOffer(call);
+    } else if (message.type === 'peer-joined') {
+      if (call.isTutor) await createCallOffer(call);
+    } else if (message.type === 'offer') {
+      if (call.isTutor) return;
+      await call.peerConnection.setRemoteDescription(message.payload);
+      await applyPendingCallCandidates(call);
+      const answer = await call.peerConnection.createAnswer();
+      await call.peerConnection.setLocalDescription(answer);
+      sendCallSignal(call, 'answer', call.peerConnection.localDescription.toJSON());
+      $('videoCallStatus').textContent = 'Video connection is being established…';
+    } else if (message.type === 'answer') {
+      await call.peerConnection.setRemoteDescription(message.payload);
+      await applyPendingCallCandidates(call);
+      $('videoCallStatus').textContent = 'Video connection is being established…';
+    } else if (message.type === 'ice-candidate') {
+      if (message.payload === null) return;
+      const candidate = new RTCIceCandidate(message.payload);
+      if (call.peerConnection.remoteDescription) {
+        await call.peerConnection.addIceCandidate(candidate);
+      } else {
+        call.pendingCandidates.push(candidate);
+      }
+    } else if (message.type === 'hangup') {
+      $('videoCallStatus').textContent = 'The other participant left the call.';
+      stopVideoCallMedia(call);
+    }
+  } catch {
+    $('videoCallStatus').textContent = 'A call signaling error occurred. Leave and reconnect.';
+  }
+}
+
+async function startVideoCall(sessionRequest) {
+  if (!window.isSecureContext && window.location.hostname !== 'localhost') {
+    $('sessionRequestsStatus').textContent = 'Video calls require HTTPS on this deployment.';
+    return;
+  }
+  if (!navigator.mediaDevices?.getUserMedia || !window.RTCPeerConnection) {
+    $('sessionRequestsStatus').textContent = 'This browser does not support WebRTC video calls.';
+    return;
+  }
+  if (activeVideoCall) closeVideoCall();
+  $('videoCallTitle').textContent =
+    `Call with ${sessionRequest.direction === 'received' ? sessionRequest.learner_name : sessionRequest.tutor_name}`;
+  $('videoCallStatus').textContent = 'Checking accepted session and requesting media permission…';
+  $('videoCallDialog').classList.remove('hide');
+  document.body.classList.add('modal-open');
+  $('videoCallClose').focus();
+  const { ok, data } = await api(`/api/session-requests/${sessionRequest.id}/video-config`);
+  if (!ok) {
+    $('videoCallStatus').textContent = data.error || 'Video call is not authorized for this session.';
+    return;
+  }
+  let localStream;
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+  } catch {
+    $('videoCallStatus').textContent =
+      'Camera or microphone permission was denied or unavailable. Check browser permissions and use HTTPS.';
+    return;
+  }
+  $('localCallVideo').srcObject = localStream;
+  const peerConnection = new RTCPeerConnection({ iceServers: data.ice_servers });
+  const remoteStream = new MediaStream();
+  $('remoteCallVideo').srcObject = remoteStream;
+  localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const socket = new WebSocket(
+    `${protocol}//${window.location.host}/ws/calls/${sessionRequest.id}`
+  );
+  const call = {
+    socket,
+    peerConnection,
+    localStream,
+    remoteStream,
+    iceServers: data.ice_servers,
+    isTutor: data.is_tutor,
+    pendingCandidates: [],
+    pendingSignals: [],
+    offerStarted: false,
+    closed: false
+  };
+  activeVideoCall = call;
+  peerConnection.ontrack = event => {
+    event.streams[0]?.getTracks().forEach(track => remoteStream.addTrack(track));
+  };
+  peerConnection.onicecandidate = event => {
+    if (!call.closed) sendCallSignal(call, 'ice-candidate', event.candidate?.toJSON() || null);
+  };
+  peerConnection.onconnectionstatechange = () => {
+    if (call.closed) return;
+    const state = peerConnection.connectionState;
+    $('videoCallStatus').textContent = state === 'connected'
+      ? 'Video call connected. Media is peer-to-peer and is not recorded.'
+      : state === 'failed'
+        ? 'The peer connection failed. A TURN server may be required for this network.'
+        : state === 'disconnected'
+          ? 'Connection interrupted. You may need to leave and reconnect.'
+          : `Call connection: ${state}.`;
+  };
+  socket.onopen = () => {
+    call.pendingSignals.splice(0).forEach(message => {
+      socket.send(JSON.stringify(message));
+    });
+  };
+  socket.onmessage = event => {
+    let message;
+    try {
+      message = JSON.parse(event.data);
+    } catch {
+      $('videoCallStatus').textContent = 'Received an invalid signaling message.';
+      return;
+    }
+    handleCallSignal(call, message);
+  };
+  socket.onerror = () => {
+    $('videoCallStatus').textContent = 'Call signaling failed. Check your connection and try again.';
+  };
+  socket.onclose = () => {
+    if (!call.closed) {
+      $('videoCallStatus').textContent = 'Call signaling disconnected. Leave and reconnect.';
+      stopVideoCallMedia(call);
+    }
+  };
+}
+
+function toggleCallAudio() {
+  if (!activeVideoCall) return;
+  const tracks = activeVideoCall.localStream.getAudioTracks();
+  const enabled = tracks.some(track => track.enabled);
+  tracks.forEach(track => { track.enabled = !enabled; });
+  $('callMuteButton').textContent = enabled ? 'Unmute microphone' : 'Mute microphone';
+}
+
+function toggleCallVideo() {
+  if (!activeVideoCall) return;
+  const tracks = activeVideoCall.localStream.getVideoTracks();
+  const enabled = tracks.some(track => track.enabled);
+  tracks.forEach(track => { track.enabled = !enabled; });
+  $('callVideoButton').textContent = enabled ? 'Enable video' : 'Disable video';
+}
+
 async function refreshSessionRequests() {
   $('sessionRequestsStatus').textContent = 'Loading session requests…';
   const { ok, data } = await api('/session-requests');
@@ -2261,6 +3520,15 @@ async function refreshSessionRequests() {
         actions.append(button);
       });
       card.append(actions);
+    } else if (item.status === 'accepted') {
+      const actions = document.createElement('div');
+      actions.className = 'request-actions';
+      const call = document.createElement('button');
+      call.type = 'button';
+      call.textContent = 'Join video call';
+      call.onclick = () => startVideoCall(item);
+      actions.append(call);
+      card.append(actions);
     }
     list.append(card);
   });
@@ -2277,13 +3545,29 @@ async function submitSessionRequest(event) {
   const formStatus = $('sessionRequestFormStatus');
   const submitButton = $('sessionRequestSubmit');
   const localScheduledFor = $('sessionRequestedFor').value;
-  const scheduledFor = localScheduledFor ? new Date(localScheduledFor).toISOString() : '';
+  const proposedDate = localScheduledFor ? new Date(localScheduledFor) : null;
   const note = $('sessionRequestNote').value.trim();
   formStatus.textContent = '';
   $('sessionRequestLogin').classList.add('hide');
-  if (!scheduledFor) {
+  if (!proposedDate || Number.isNaN(proposedDate.getTime())) {
     formStatus.textContent = 'Choose a proposed date and time.';
     return;
+  }
+  const scheduledFor = proposedDate.toISOString();
+  const selectedSlot = $('sessionAvailabilitySlot').selectedOptions[0];
+  if (selectedSlot?.dataset.day) {
+    const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const pad = value => String(value).padStart(2, '0');
+    const proposedTime = `${pad(proposedDate.getHours())}:${pad(proposedDate.getMinutes())}`;
+    if (
+      weekdays[proposedDate.getDay()] !== selectedSlot.dataset.day
+      || proposedTime < selectedSlot.dataset.start
+      || proposedTime >= selectedSlot.dataset.end
+    ) {
+      formStatus.textContent =
+        `Choose a date and time within the selected ${selectedSlot.dataset.day} slot. This request will not reserve the slot.`;
+      return;
+    }
   }
   submitButton.disabled = true;
   formStatus.textContent = 'Sending your request…';
@@ -2465,6 +3749,7 @@ $('tutorSearchForm').onsubmit = async e => {
     $('tutorSearchStatus').textContent = data.error || 'Tutor search failed.';
     return;
   }
+  await loadLearnerResources(subject);
   if (!data.tutors.length) {
     $('tutorSearchStatus').textContent = `No tutors found for "${subject}".`;
     return;

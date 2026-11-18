@@ -80,3 +80,76 @@ CREATE INDEX IF NOT EXISTS idx_session_requests_tutor_status
   ON session_requests (tutor_id, status, created_at);
 CREATE INDEX IF NOT EXISTS idx_session_requests_learner_status
   ON session_requests (learner_id, status, created_at);
+CREATE TABLE IF NOT EXISTS learning_resources (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  tutor_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  subject_id INTEGER NOT NULL REFERENCES subjects(id) ON DELETE RESTRICT,
+  storage_key TEXT NOT NULL UNIQUE,
+  title TEXT NOT NULL,
+  description TEXT NOT NULL DEFAULT '',
+  file_name TEXT NOT NULL,
+  file_type TEXT NOT NULL,
+  file_size INTEGER NOT NULL CHECK (file_size > 0),
+  is_published INTEGER NOT NULL DEFAULT 0 CHECK (is_published IN (0, 1)),
+  uploaded_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_learning_resources_subject
+  ON learning_resources (subject_id, is_published, uploaded_at);
+CREATE INDEX IF NOT EXISTS idx_learning_resources_tutor
+  ON learning_resources (tutor_id, uploaded_at);
+CREATE TABLE IF NOT EXISTS quizzes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  tutor_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  resource_id INTEGER NOT NULL REFERENCES learning_resources(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'published')),
+  focus_monitoring_enabled INTEGER NOT NULL DEFAULT 0
+    CHECK (focus_monitoring_enabled IN (0, 1)),
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  published_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_quizzes_resource_status
+  ON quizzes (resource_id, status, created_at);
+CREATE TABLE IF NOT EXISTS quiz_questions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  quiz_id INTEGER NOT NULL REFERENCES quizzes(id) ON DELETE CASCADE,
+  test_number INTEGER NOT NULL CHECK (test_number IN (1, 2)),
+  position INTEGER NOT NULL CHECK (position > 0),
+  question TEXT NOT NULL,
+  options_json TEXT NOT NULL DEFAULT '[]',
+  answer_key TEXT NOT NULL,
+  source_excerpt TEXT NOT NULL,
+  UNIQUE (quiz_id, test_number, position)
+);
+CREATE TABLE IF NOT EXISTS quiz_assignments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  quiz_id INTEGER NOT NULL REFERENCES quizzes(id) ON DELETE CASCADE,
+  learner_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  assigned_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (quiz_id, learner_id)
+);
+CREATE TABLE IF NOT EXISTS quiz_attempts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  quiz_id INTEGER NOT NULL REFERENCES quizzes(id) ON DELETE CASCADE,
+  learner_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  started_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  submitted_at TEXT,
+  focus_monitoring_enabled INTEGER NOT NULL DEFAULT 0
+    CHECK (focus_monitoring_enabled IN (0, 1)),
+  focus_consent INTEGER NOT NULL DEFAULT 0 CHECK (focus_consent IN (0, 1)),
+  answers_json TEXT NOT NULL DEFAULT '{}',
+  score INTEGER,
+  total_questions INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_quiz_attempts_tutor_results
+  ON quiz_attempts (quiz_id, submitted_at, learner_id);
+CREATE TABLE IF NOT EXISTS quiz_focus_events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  attempt_id INTEGER NOT NULL REFERENCES quiz_attempts(id) ON DELETE CASCADE,
+  event_type TEXT NOT NULL CHECK (event_type IN ('hidden', 'blur')),
+  occurred_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_quiz_focus_events_attempt
+  ON quiz_focus_events (attempt_id, occurred_at);

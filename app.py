@@ -1,3 +1,6 @@
+import base64
+import hashlib
+import hmac
 import io
 import json
 import math
@@ -5,7 +8,7 @@ import os
 import re
 import sqlite3
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from urllib.parse import urlsplit
 
 from flask import Flask, jsonify, make_response, request, send_file, session
@@ -13,8 +16,11 @@ from flask_sock import Sock
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from db import get_db, init_db
+from call_realtime import add_call_client, remove_call_client, send_call_signal
 from notifications import push_configuration, send_push_to_user, send_sms_to_user
+from quizzes import quizzes_bp
 from realtime import add_client, remove_client, send_to_user
+from resource_library import resource_library_bp
 from session_requests import session_requests_bp
 
 app = Flask(__name__, static_folder="public", static_url_path="")
@@ -27,17 +33,42 @@ if not secret_key:
         raise RuntimeError("SECRET_KEY must be configured when APP_ENV=production")
     app.logger.warning("Using the development SECRET_KEY; configure SECRET_KEY before deployment.")
     secret_key = "dev-secret-change-me"
+resource_storage_dir = os.environ.get("RESOURCE_STORAGE_DIR", "").strip()
+if resource_storage_dir:
+    resource_storage_dir = os.path.abspath(resource_storage_dir)
+elif APP_ENV == "production":
+    raise RuntimeError(
+        "RESOURCE_STORAGE_DIR must point to persistent storage when APP_ENV=production"
+    )
+else:
+    resource_storage_dir = os.path.join(os.path.dirname(__file__), "uploads", "resources")
+if APP_ENV == "production" and not os.environ.get("DB_FILE", "").strip():
+    raise RuntimeError("DB_FILE must point to persistent storage when APP_ENV=production")
 app.secret_key = secret_key
 app.permanent_session_lifetime = timedelta(hours=2)
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE=APP_ENV == "production",
     MAX_CONTENT_LENGTH=5 * 1024 * 1024 + 64 * 1024,
     PROFILE_PHOTO_DIR=os.path.join(os.path.dirname(__file__), "uploads", "profile_photos"),
+    RESOURCE_STORAGE_DIR=resource_storage_dir,
 )
+static_directory = os.path.realpath(app.static_folder)
+resource_directory = os.path.realpath(resource_storage_dir)
+try:
+    resource_directory_is_static = (
+        os.path.commonpath((static_directory, resource_directory)) == static_directory
+    )
+except ValueError:
+    resource_directory_is_static = False
+if resource_directory_is_static:
+    raise RuntimeError("RESOURCE_STORAGE_DIR must be outside the public static directory")
 
 init_db()
 app.register_blueprint(session_requests_bp)
+app.register_blueprint(resource_library_bp)
+app.register_blueprint(quizzes_bp)
 sock = Sock(app)
 
 EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
@@ -121,6 +152,16 @@ def get_user_conversation(conn, conversation_id, uid):
            FROM conversations
            WHERE id = ? AND (user_1_id = ? OR user_2_id = ?)""",
         (conversation_id, uid, uid),
+    ).fetchone()
+
+
+def get_accepted_session_request(conn, request_id, uid):
+    return conn.execute(
+        """SELECT id, tutor_id, learner_id
+           FROM session_requests
+           WHERE id = ? AND status = 'accepted'
+             AND (tutor_id = ? OR learner_id = ?)""",
+        (request_id, uid, uid),
     ).fetchone()
 
 
@@ -1123,6 +1164,155 @@ def realtime_chat(websocket):
         )
     finally:
         remove_client(user_id, websocket)
+
+
+@app.get("/api/session-requests/<int:request_id>/video-config")
+def video_call_configuration(request_id):
+    user_id = session.get("uid")
+    if not user_id:
+        return fail(401, "Not authenticated")
+    conn = get_db()
+    session_request = get_accepted_session_request(conn, request_id, user_id)
+    conn.close()
+    if not session_request:
+        return fail(404, "Accepted session not found")
+    stun_urls = [
+        value.strip()
+        for value in os.environ.get("STUN_URLS", "").split(",")
+        if value.strip()
+    ]
+    turn_urls = [
+        value.strip()
+        for value in os.environ.get("TURN_URLS", "").split(",")
+        if value.strip()
+    ]
+    turn_secret = os.environ.get("TURN_SHARED_SECRET", "").strip()
+    if turn_urls and not turn_secret:
+        return fail(503, "TURN_URLS is configured without TURN_SHARED_SECRET")
+    ice_servers = []
+    if stun_urls:
+        ice_servers.append({"urls": stun_urls})
+    if turn_urls:
+        expires = int(datetime.now(timezone.utc).timestamp()) + 600
+        username = f"{expires}:{user_id}:{request_id}"
+        credential = base64.b64encode(
+            hmac.new(
+                turn_secret.encode("utf-8"),
+                username.encode("utf-8"),
+                hashlib.sha1,
+            ).digest()
+        ).decode("ascii")
+        ice_servers.append(
+            {
+                "urls": turn_urls,
+                "username": username,
+                "credential": credential,
+            }
+        )
+    response = jsonify(
+        ice_servers=ice_servers,
+        turn_configured=bool(turn_urls),
+        is_tutor=session_request["tutor_id"] == user_id,
+        peer_id=(
+            session_request["learner_id"]
+            if session_request["tutor_id"] == user_id
+            else session_request["tutor_id"]
+        ),
+    )
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+@sock.route("/ws/calls/<int:request_id>")
+def realtime_video_call(websocket, request_id):
+    user_id = session.get("uid")
+    if not user_id:
+        websocket.close(reason="Authentication required")
+        return
+    origin = request.headers.get("Origin")
+    if origin:
+        parsed_origin = urlsplit(origin)
+        if (
+            parsed_origin.scheme not in ("http", "https")
+            or parsed_origin.netloc.casefold() != request.host.casefold()
+            or parsed_origin.username is not None
+            or parsed_origin.password is not None
+        ):
+            websocket.close(reason="Origin not allowed")
+            return
+    conn = get_db()
+    session_request = get_accepted_session_request(conn, request_id, user_id)
+    conn.close()
+    if not session_request:
+        websocket.close(reason="Accepted session required")
+        return
+    peer_id = (
+        session_request["learner_id"]
+        if session_request["tutor_id"] == user_id
+        else session_request["tutor_id"]
+    )
+    peer_present = add_call_client(request_id, user_id, websocket)
+    try:
+        websocket.send(
+            json.dumps(
+                {
+                    "type": "connected",
+                    "is_tutor": session_request["tutor_id"] == user_id,
+                    "peer_present": peer_present,
+                }
+            )
+        )
+        while True:
+            raw_message = websocket.receive()
+            if raw_message is None:
+                break
+            if not isinstance(raw_message, str) or len(raw_message) > 16000:
+                websocket.close(reason="Invalid signaling message")
+                break
+            try:
+                message = json.loads(raw_message)
+            except json.JSONDecodeError:
+                websocket.close(reason="Invalid signaling message")
+                break
+            if not isinstance(message, dict):
+                websocket.close(reason="Invalid signaling message")
+                break
+            event_type = message.get("type")
+            payload = message.get("payload")
+            if event_type in ("offer", "answer"):
+                if (
+                    not isinstance(payload, dict)
+                    or not isinstance(payload.get("sdp"), str)
+                    or len(payload["sdp"]) > 12000
+                    or payload.get("type") != event_type
+                ):
+                    websocket.close(reason="Invalid session description")
+                    break
+            elif event_type == "ice-candidate":
+                if payload is not None and (
+                    not isinstance(payload, dict)
+                    or not isinstance(payload.get("candidate"), str)
+                    or len(payload["candidate"]) > 5000
+                ):
+                    websocket.close(reason="Invalid ICE candidate")
+                    break
+            elif event_type != "hangup":
+                websocket.close(reason="Unsupported signaling message")
+                break
+            send_call_signal(
+                request_id,
+                user_id,
+                peer_id,
+                {"type": event_type, "payload": payload},
+            )
+    except Exception:
+        app.logger.warning(
+            "Video call signaling connection ended for user %s",
+            user_id,
+            exc_info=True,
+        )
+    finally:
+        remove_call_client(request_id, user_id, websocket)
 
 
 @app.post("/conversations")

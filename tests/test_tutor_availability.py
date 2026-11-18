@@ -72,6 +72,7 @@ class TutorAvailabilityTestCase(unittest.TestCase):
 
     def test_learners_cannot_manage_availability(self):
         self.create_user("learner")
+        self.assertNotIn("availability", self.client.get("/dashboard").get_json())
         self.assertEqual(self.client.get("/tutor/availability").status_code, 403)
         self.assertEqual(
             self.add_slot("Monday", "09:00", "10:00").status_code, 403
