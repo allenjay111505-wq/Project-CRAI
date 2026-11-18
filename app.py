@@ -179,104 +179,48 @@ def public_tutor_profile_page(tutor_id):
 @app.get("/api/tutors")
 def search_tutors():
     subject_name = request.args.get("subject", "").strip()
-    if not subject_name:
-        return fail(400, "Enter a subject to search")
+    tutor_name = request.args.get("name", "").strip()
+    if not subject_name and not tutor_name:
+        return fail(400, "Enter a tutor name or subject to search")
+    if len(subject_name) > 100:
+        return fail(400, "Subject search must be 100 characters or fewer")
+    if len(tutor_name) > 120:
+        return fail(400, "Tutor name search must be 120 characters or fewer")
 
-    day = request.args.get("day", "").strip()
-    start_time = request.args.get("start_time", "").strip()
-    end_time = request.args.get("end_time", "").strip()
-    if day:
-        day = next((value for value in DAYS if value.casefold() == day.casefold()), None)
-        if day is None:
-            return fail(400, "Select a valid day of the week")
-        if bool(start_time) != bool(end_time):
-            return fail(400, "Enter both start and end times for availability")
-        if start_time:
-            parsed, error = parse_availability(
-                {"day": day, "start_time": start_time, "end_time": end_time}
-            )
-            if error:
-                return fail(400, error)
-            day, start_time, end_time = parsed
-    elif start_time or end_time:
-        return fail(400, "Select a day when filtering by time")
-
-    rate_filter = request.args.get("rate", "any").strip().casefold()
-    free_filter = request.args.get("free")
-    if free_filter is not None and free_filter.strip():
-        free_value = free_filter.strip().casefold()
-        if free_value in ("true", "1", "yes", "free"):
-            free_rate_filter = "free"
-        elif free_value in ("false", "0", "no", "paid"):
-            free_rate_filter = "paid"
-        else:
-            return fail(400, "Select a valid free filter")
-        if rate_filter != "any" and rate_filter != free_rate_filter:
-            return fail(400, "Free and rate filters must agree")
-        rate_filter = free_rate_filter
-    if rate_filter not in ("any", "free", "paid"):
-        return fail(400, "Select a valid rate filter")
-    sort_order = request.args.get("sort", "name").strip().casefold()
-    if sort_order not in ("name", "rate_asc", "rate_desc"):
-        return fail(400, "Select a valid sort order")
-
-    filters = [
-        "users.role IN ('tutor', 'both')",
-        """EXISTS (
-               SELECT 1 FROM tutor_subjects AS matching_tutor_subjects
-               JOIN subjects AS matching_subjects
-                 ON matching_subjects.id = matching_tutor_subjects.subject_id
-               WHERE matching_tutor_subjects.tutor_id = users.id
-                 AND matching_subjects.subject_name = ? COLLATE NOCASE
-           )""",
-    ]
-    params = [subject_name]
-    if day:
-        availability_filter = """EXISTS (
-               SELECT 1 FROM availability AS matching_availability
-               WHERE matching_availability.tutor_id = users.id
-                 AND matching_availability.day = ?"""
-        params.append(day)
-        if start_time:
-            availability_filter += """
-                 AND matching_availability.start_time <= ?
-                 AND matching_availability.end_time >= ?"""
-            params.extend((start_time, end_time))
-        filters.append(availability_filter + ")")
-    if rate_filter == "free":
+    filters = ["users.role IN ('tutor', 'both')"]
+    params = []
+    if subject_name:
+        escaped_subject = (
+            subject_name.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        )
         filters.append(
-            "(tutor_rates.rate_per_hour IS NULL OR tutor_rates.tutor_id IS NULL)"
+            """EXISTS (
+                   SELECT 1 FROM tutor_subjects AS matching_tutor_subjects
+                   JOIN subjects AS matching_subjects
+                     ON matching_subjects.id = matching_tutor_subjects.subject_id
+                   WHERE matching_tutor_subjects.tutor_id = users.id
+                     AND matching_subjects.subject_name LIKE ? COLLATE NOCASE ESCAPE '\\'
+               )"""
         )
-    elif rate_filter == "paid":
-        filters.append("tutor_rates.rate_per_hour IS NOT NULL")
-    if sort_order == "rate_asc":
-        order_by = (
-            "CASE WHEN tutor_rates.rate_per_hour IS NULL THEN 0 ELSE 1 END, "
-            "tutor_rates.rate_per_hour ASC, users.full_name COLLATE NOCASE"
+        params.append(f"%{escaped_subject}%")
+    if tutor_name:
+        escaped_name = (
+            tutor_name.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
         )
-    elif sort_order == "rate_desc":
-        order_by = (
-            "CASE WHEN tutor_rates.rate_per_hour IS NULL THEN 1 ELSE 0 END, "
-            "tutor_rates.rate_per_hour DESC, users.full_name COLLATE NOCASE"
-        )
-    else:
-        order_by = "users.full_name COLLATE NOCASE"
+        filters.append("users.full_name LIKE ? COLLATE NOCASE ESCAPE '\\'")
+        params.append(f"%{escaped_name}%")
 
     conn = get_db()
     rows = conn.execute(
         """SELECT users.id, users.full_name, users.profile_photo,
                   subjects.subject_name,
-                  tutor_rates.rate_per_hour,
-                  (SELECT group_concat(
-                       day || ' ' || start_time || '-' || end_time, '; ')
-                   FROM availability
-                   WHERE availability.tutor_id = users.id) AS availability
+                  tutor_rates.rate_per_hour
            FROM users
            JOIN tutor_subjects ON tutor_subjects.tutor_id = users.id
            JOIN subjects ON subjects.id = tutor_subjects.subject_id
            LEFT JOIN tutor_rates ON tutor_rates.tutor_id = users.id
            WHERE """ + " AND ".join(filters) + """
-           ORDER BY """ + order_by + """, subjects.subject_name COLLATE NOCASE""",
+           ORDER BY users.full_name COLLATE NOCASE, subjects.subject_name COLLATE NOCASE""",
         params,
     ).fetchall()
     conn.close()
@@ -292,7 +236,6 @@ def search_tutors():
                 "subjects": [],
                 "is_free": row["rate_per_hour"] is None,
                 "rate_per_hour": row["rate_per_hour"],
-                "availability": row["availability"] or "",
             },
         )
         tutor["subjects"].append(row["subject_name"])

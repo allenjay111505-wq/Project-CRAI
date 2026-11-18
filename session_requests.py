@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import sqlite3
 
 from flask import Blueprint, jsonify, request, session
@@ -100,6 +100,20 @@ def create_session_request():
     tutor_id = data.get("tutor_id")
     if isinstance(tutor_id, bool) or not isinstance(tutor_id, int) or tutor_id < 1:
         return fail(400, "A valid tutor_id is required")
+    availability_id = data.get("availability_id")
+    if (
+        isinstance(availability_id, bool)
+        or not isinstance(availability_id, int)
+        or availability_id < 1
+    ):
+        return fail(400, "Choose a tutor's published availability slot")
+    timezone_offset_minutes = data.get("timezone_offset_minutes")
+    if (
+        isinstance(timezone_offset_minutes, bool)
+        or not isinstance(timezone_offset_minutes, int)
+        or not -840 <= timezone_offset_minutes <= 840
+    ):
+        return fail(400, "A valid local timezone offset is required")
     scheduled_for = parse_scheduled_for(data.get("scheduled_for"))
     if scheduled_for is None:
         return fail(400, "Choose a valid date and time in the future")
@@ -130,6 +144,25 @@ def create_session_request():
             return fail(404, "Tutor not found")
         if tutor_id == learner_id:
             return fail(400, "You cannot request a session with yourself")
+        slot = conn.execute(
+            """SELECT day, start_time, end_time FROM availability
+               WHERE id = ? AND tutor_id = ?""",
+            (availability_id, tutor_id),
+        ).fetchone()
+        if not slot:
+            return fail(400, "Choose a time within the tutor's published availability")
+        local_timezone = timezone(timedelta(minutes=-timezone_offset_minutes))
+        local_scheduled_for = datetime.fromisoformat(scheduled_for).astimezone(
+            local_timezone
+        )
+        proposed_day = local_scheduled_for.strftime("%A")
+        proposed_time = local_scheduled_for.strftime("%H:%M")
+        if (
+            proposed_day != slot["day"]
+            or proposed_time < slot["start_time"]
+            or proposed_time >= slot["end_time"]
+        ):
+            return fail(400, "Choose a time within the tutor's published availability")
         cursor = conn.execute(
             """INSERT INTO session_requests
                (tutor_id, learner_id, scheduled_for, note)

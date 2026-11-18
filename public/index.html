@@ -258,6 +258,14 @@ input[type="checkbox"]{width:18px;min-height:18px;accent-color:var(--blue)}
 .profile-detail-group h3{margin:0 0 13px;color:#718096;font-size:.72rem;font-weight:850;letter-spacing:.1em;text-transform:uppercase}
 .profile-details-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .profile-detail{min-width:0;padding:13px 14px;border:1px solid #e8edf4;border-radius:12px;background:#fbfcfe}
+.profile-tutor-table-card{margin-top:22px}
+.profile-tutor-table-wrap{overflow-x:auto}
+.profile-tutor-table{width:100%;min-width:720px;border-collapse:collapse}
+.profile-tutor-table th,.profile-tutor-table td{padding:14px 12px;border-top:1px solid #e8edf4;text-align:left;vertical-align:middle}
+.profile-tutor-table thead th{border-top:0;color:var(--navy);font-size:.82rem;font-weight:800}
+.profile-tutor-table tbody th{width:25%;color:var(--navy);font-size:.9rem}
+.profile-tutor-table tbody td{color:var(--ink);font-size:.9rem}
+.profile-tutor-table td:last-child{white-space:nowrap}
 .profile-detail dt{margin-bottom:4px;color:var(--muted);font-size:.77rem;font-weight:700}
 .profile-detail dd{margin:0;color:var(--ink);font-size:.91rem;font-weight:650;overflow-wrap:anywhere}
 .profile-detail dd a{font-size:.86rem}
@@ -467,6 +475,11 @@ input[type="checkbox"]{width:18px;min-height:18px;accent-color:var(--blue)}
 .public-tutor-details .card{margin:0;padding:20px 22px}
 .public-tutor-details h2{margin:0 0 10px;color:var(--navy);font-size:1.02rem}
 .public-tutor-details .profile-list{margin:0}
+.public-tutor-profile-table{width:100%;border-collapse:collapse}
+.public-tutor-profile-table th,.public-tutor-profile-table td{padding:12px 10px;border-top:1px solid #e8edf4;text-align:left;vertical-align:top}
+.public-tutor-profile-table th{width:150px;color:var(--navy);font-size:.9rem}
+.public-tutor-profile-table .profile-list{display:grid;gap:5px}
+.learning-materials-overlay{z-index:24}
 .public-tutor-contact{margin-top:18px;padding-top:18px;border-top:1px solid #e8edf4}
 .public-tutor-contact .public-message-actions{gap:9px}
 .public-tutor-contact .toast{margin:0}
@@ -568,6 +581,8 @@ body.modal-open{overflow:hidden}
   .notification-settings-status{text-align:left}
   .public-profile-overlay{align-items:start;padding:12px}
   .public-profile-modal{max-height:calc(100vh - 24px);padding:18px;border-radius:18px}
+  .public-tutor-profile-table th,.public-tutor-profile-table td{padding:10px 6px}
+  .public-tutor-profile-table th{width:115px}
   .profile-photo-overlay{align-items:center;padding:12px}
   .profile-photo-modal{max-height:calc(100vh - 24px);padding:18px;border-radius:18px}
   .learner-profile-overlay{align-items:start;padding:12px}
@@ -856,6 +871,22 @@ body.modal-open{overflow:hidden}
           <p id="pushNotificationsStatus" class="notification-settings-status" role="status"></p>
         </div>
       </section>
+      <section id="tutorProfileTableSection" class="card dashboard-page-card profile-tutor-table-card hide" aria-labelledby="tutorProfileTableTitle">
+        <div class="profile-details-heading">
+          <div>
+            <h2 id="tutorProfileTableTitle">Teaching subjects and availability</h2>
+            <p class="sub">Learning materials are listed separately for each subject.</p>
+          </div>
+        </div>
+        <div class="profile-tutor-table-wrap">
+          <table class="profile-tutor-table">
+            <thead>
+              <tr><th scope="col">Subject</th><th scope="col">Day of week</th><th scope="col">Specific time</th><th scope="col">Learning materials</th></tr>
+            </thead>
+            <tbody id="profileTutorTableBody"></tbody>
+          </table>
+        </div>
+      </section>
     </section>
     <section id="tutorWorkspacePage" class="dashboard-page hide">
       <section id="tutorBox" class="card dashboard-page-card hide">
@@ -916,29 +947,6 @@ body.modal-open{overflow:hidden}
         </form>
         <div class="err" id="rateErr" role="alert"></div>
         <section class="resource-section" aria-labelledby="tutorResourceHeading">
-          <h3 id="tutorResourceHeading">Learning resources</h3>
-          <p class="sub">Upload notes and handouts for subjects you teach. Files are private until you choose to make them available.</p>
-          <form id="resourceUploadForm" class="resource-form">
-            <label for="resourceTitle">Title
-              <input id="resourceTitle" maxlength="120" required>
-            </label>
-            <label for="resourceSubject">Subject
-              <select id="resourceSubject" required></select>
-            </label>
-            <label for="resourceFile">File <span class="muted">(TXT, Markdown, PDF, DOCX; up to 5 MB)</span>
-              <input id="resourceFile" type="file" accept=".txt,.md,.pdf,.docx" required>
-            </label>
-            <label for="resourceDescription">Description
-              <textarea id="resourceDescription" maxlength="2000" rows="2"></textarea>
-            </label>
-            <label class="resource-publish-option" for="resourcePublish">
-              <input id="resourcePublish" type="checkbox">
-              Make available to learners
-            </label>
-            <button id="resourceUploadButton">Upload resource</button>
-          </form>
-          <p id="tutorResourceStatus" class="resource-status" role="status"></p>
-          <div id="tutorResourceList" class="resource-list"></div>
           <h3>Generate a two-part quiz</h3>
           <p class="sub">Generation uses Google Gemini only when the server is configured. Review all questions and answer keys before publishing.</p>
           <form id="tutorQuizGenerateForm" class="quiz-generation-form">
@@ -969,42 +977,18 @@ body.modal-open{overflow:hidden}
       <section id="learnerBox" class="card dashboard-page-card hide">
         <div class="card-heading">
           <span class="card-icon" aria-hidden="true">02</span>
-          <div><h2>Find a tutor</h2><p>Search by subject and narrow results to your schedule and budget.</p></div>
+          <div><h2>Find a tutor</h2><p>Search tutors by their name or the subjects they teach.</p></div>
         </div>
         <form id="tutorSearchForm" class="tutor-search-form">
           <label for="tutorSearchSubject">Search by subject
-            <input id="tutorSearchSubject" maxlength="100" autocomplete="off" required>
+            <input id="tutorSearchSubject" maxlength="100" autocomplete="off">
           </label>
-          <label for="tutorSearchDay">Availability day
-            <select id="tutorSearchDay">
-              <option value="">Any day</option>
-              <option>Monday</option><option>Tuesday</option><option>Wednesday</option>
-              <option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option>
-            </select>
-          </label>
-          <label for="tutorSearchStart">Available from
-            <input id="tutorSearchStart" type="time">
-          </label>
-          <label for="tutorSearchEnd">Available until
-            <input id="tutorSearchEnd" type="time">
-          </label>
-          <label for="tutorSearchRate">Session rate
-            <select id="tutorSearchRate">
-              <option value="any">Any rate</option>
-              <option value="free">Free only</option>
-              <option value="paid">Paid only</option>
-            </select>
-          </label>
-          <label for="tutorSearchSort">Sort by
-            <select id="tutorSearchSort">
-              <option value="name">Name</option>
-              <option value="rate_asc">Rate: low to high</option>
-              <option value="rate_desc">Rate: high to low</option>
-            </select>
+          <label for="tutorSearchName">Tutor name
+            <input id="tutorSearchName" maxlength="120" autocomplete="off">
           </label>
           <button>Search tutors</button>
         </form>
-        <p id="tutorSearchStatus" class="toast" role="status">Enter a subject to find tutors.</p>
+        <p id="tutorSearchStatus" class="toast" role="status">Enter a tutor name or subject to search.</p>
         <div id="tutorSearchResults" class="tutor-results"></div>
         <section class="resource-section" aria-labelledby="learnerResourceHeading">
           <h3 id="learnerResourceHeading">Learning resources</h3>
@@ -1186,7 +1170,7 @@ body.modal-open{overflow:hidden}
       <div>
         <p class="messages-kicker">C.R.A.I. · Tutor profile</p>
         <h1>Meet your tutor</h1>
-        <p>Explore their subjects, availability, and session rate.</p>
+        <p>Explore their subjects, weekly availability, and learning materials.</p>
       </div>
       <button id="closeTutorProfile" class="ghost public-profile-close" type="button" aria-label="Close tutor profile">×</button>
     </header>
@@ -1201,12 +1185,15 @@ body.modal-open{overflow:hidden}
         </section>
         <div class="public-tutor-details">
           <section class="card dashboard-page-card">
-            <h2>Subjects</h2>
-            <ul id="publicTutorSubjects" class="profile-list"></ul>
-          </section>
-          <section class="card dashboard-page-card">
-            <h2>Weekly availability</h2>
-            <ul id="publicTutorAvailability" class="profile-list"></ul>
+            <h2>Teaching profile</h2>
+            <table class="public-tutor-profile-table">
+              <tbody>
+                <tr><th scope="row">Subjects</th><td><ul id="publicTutorSubjects" class="profile-list"></ul></td></tr>
+                <tr><th scope="row">Days available</th><td><ul id="publicTutorDays" class="profile-list"></ul></td></tr>
+                <tr><th scope="row">Available times</th><td><ul id="publicTutorTimes" class="profile-list"></ul></td></tr>
+                <tr><th scope="row">PDF materials</th><td><button id="openPublicTutorMaterials" class="ghost" type="button">My learning materials</button></td></tr>
+              </tbody>
+            </table>
           </section>
           <section class="card dashboard-page-card">
             <h2>Session rate</h2>
@@ -1236,6 +1223,47 @@ body.modal-open{overflow:hidden}
                 <a id="sessionRequestLogin" class="hide" href="/">Log in and return to this profile</a>
               </form>
             </div>
+          </section>
+        </div>
+
+        <div id="learningMaterialsDialog" class="public-profile-overlay learning-materials-overlay hide" role="presentation">
+          <section class="public-profile-modal" role="dialog" aria-modal="true" aria-labelledby="learningMaterialsTitle">
+            <header class="public-profile-modal-header">
+              <div>
+                <p class="messages-kicker">C.R.A.I. · Learning resources</p>
+                <h1 id="learningMaterialsTitle">My learning materials</h1>
+                <p id="learningMaterialsDescription">Browse PDFs shared by this tutor, grouped by subject.</p>
+              </div>
+              <button id="closeLearningMaterials" class="ghost public-profile-close" type="button" aria-label="Close learning materials">×</button>
+            </header>
+            <section id="tutorMaterialsManager" class="hide" aria-label="Manage learning materials">
+              <p class="sub">Upload notes and handouts for subjects you teach. Files are private until you choose to make them available.</p>
+              <form id="resourceUploadForm" class="resource-form">
+                <label for="resourceTitle">Title
+                  <input id="resourceTitle" maxlength="120" required>
+                </label>
+                <label for="resourceSubject">Subject
+                  <select id="resourceSubject" required></select>
+                </label>
+                <label for="resourceFile">File <span class="muted">(TXT, Markdown, PDF, DOCX; up to 5 MB)</span>
+                  <input id="resourceFile" type="file" accept=".txt,.md,.pdf,.docx" required>
+                </label>
+                <label for="resourceDescription">Description
+                  <textarea id="resourceDescription" maxlength="2000" rows="2"></textarea>
+                </label>
+                <label class="resource-publish-option" for="resourcePublish">
+                  <input id="resourcePublish" type="checkbox">
+                  Make available to learners
+                </label>
+                <button id="resourceUploadButton">Upload resource</button>
+              </form>
+              <p id="tutorResourceStatus" class="resource-status" role="status"></p>
+              <div id="tutorResourceList" class="resource-list"></div>
+            </section>
+            <section id="publicTutorMaterials" class="hide" aria-label="Published tutor PDFs">
+              <p id="publicTutorMaterialsStatus" class="resource-status" role="status"></p>
+              <div id="publicTutorMaterialsList" class="resource-list"></div>
+            </section>
           </section>
         </div>
       </div>
@@ -1282,6 +1310,7 @@ const show = view => {
 let activeConversation = null;
 let publicTutorId = null;
 let publicProfileReturnFocus = null;
+let learningMaterialsReturnFocus = null;
 let profilePhotoReturnFocus = null;
 let profilePhotoPreviewUrl = null;
 let selectedProfilePhoto = null;
@@ -1290,7 +1319,9 @@ let learnerProfileReturnFocus = null;
 let currentUserId = null;
 let currentProfileData = null;
 let currentTutorSubjects = [];
+let currentTutorAvailability = [];
 let currentTutorResources = [];
+let tutorResourceFilterSubjectId = null;
 let activeQuizAttemptId = null;
 let activeQuizMonitorConsent = false;
 let activeQuizFocusHandlers = null;
@@ -1543,32 +1574,16 @@ async function route() {
   renderProfileDetails(data);
   $('tutorBox').classList.toggle('hide', data.role === 'learner');
   $('learnerBox').classList.toggle('hide', data.role === 'tutor');
+  $('tutorProfileTableSection').classList.toggle('hide', data.role === 'learner');
   if (data.role !== 'learner') {
-    const { ok: subjectsOk, data: subjectsData } = await api('/tutor/subjects');
-    if (subjectsOk) {
-      currentTutorSubjects = subjectsData.subjects;
-      renderTutorSubjects(subjectsData.subjects, subjectsData.available_subjects);
-      const uploadSubject = $('resourceSubject');
-      uploadSubject.replaceChildren();
-      currentTutorSubjects.forEach(subject => {
-        const option = document.createElement('option');
-        option.value = subject.id;
-        option.textContent = subject.subject_name;
-        uploadSubject.append(option);
-      });
-      await refreshTutorResources();
-    }
+    await refreshTutorSubjects();
     $('rateSummary').textContent = data.is_free
       ? 'Sessions are free.'
       : `Rate: ${data.rate_per_hour} per hour.`;
     $('rateType').value = data.is_free ? 'free' : 'paid';
     $('rateAmount').value = data.rate_per_hour ?? '';
     $('rateAmountLabel').classList.toggle('hide', data.is_free);
-    const { ok: availabilityOk, data: availabilityData } = await api('/tutor/availability');
-    if (availabilityOk) {
-      renderAvailability(availabilityData.availability);
-      renderTutorSetupChecklist(data.subjects.length > 0, availabilityData.availability.length > 0, data.has_rate_configured);
-    }
+    await refreshTutorAvailability();
   }
   show('dashboard');
   startDashboardClock();
@@ -1639,15 +1654,57 @@ function renderProfileDetails(data) {
     ['Year level', `Year ${data.year_level}`]
   ]);
   if (data.role !== 'learner') {
+    const rate = document.createElement('span');
+    rate.id = 'profileTutorRate';
+    rate.textContent = data.is_free
+      ? 'Free'
+      : `${data.rate_per_hour} per hour`;
     const publicProfileLink = document.createElement('a');
     publicProfileLink.href = `/tutors/${data.id}`;
     publicProfileLink.textContent = 'View public tutor profile';
     addGroup('Tutor information', [
-      ['Subjects', data.subjects.length ? data.subjects.join(', ') : 'Not provided'],
-      ['Session rate', data.is_free ? 'Free' : `${data.rate_per_hour} per hour`],
+      ['Session rate', rate],
       ['Public profile', publicProfileLink]
     ]);
   }
+}
+
+function renderTutorProfileTable() {
+  const body = $('profileTutorTableBody');
+  body.replaceChildren();
+  if (!currentTutorSubjects.length) {
+    const row = document.createElement('tr');
+    const empty = document.createElement('td');
+    empty.colSpan = 4;
+    empty.textContent = 'No subjects added yet. Add a subject in Tutor Workspace.';
+    row.append(empty);
+    body.append(row);
+    return;
+  }
+  const days = [...new Set(currentTutorAvailability.map(slot => slot.day))];
+  const times = currentTutorAvailability.map(
+    slot => `${slot.day}: ${slot.start_time}–${slot.end_time}`
+  );
+  currentTutorSubjects.forEach(subject => {
+    const row = document.createElement('tr');
+    const name = document.createElement('th');
+    name.scope = 'row';
+    name.textContent = subject.subject_name;
+    const daysCell = document.createElement('td');
+    daysCell.textContent = days.length ? days.join(', ') : 'Not provided';
+    const timesCell = document.createElement('td');
+    timesCell.textContent = times.length ? times.join('; ') : 'Not provided';
+    const materialsCell = document.createElement('td');
+    const materialsButton = document.createElement('button');
+    materialsButton.type = 'button';
+    materialsButton.className = 'ghost';
+    materialsButton.textContent = 'My learning materials';
+    materialsButton.onclick = () =>
+      openTutorMaterialsForSubject(subject, materialsButton);
+    materialsCell.append(materialsButton);
+    row.append(name, daysCell, timesCell, materialsCell);
+    body.append(row);
+  });
 }
 
 function populateProfileEditForm(data) {
@@ -1896,7 +1953,7 @@ function renderTutorSubjects(subjects, availableSubjects) {
     remove.onclick = async () => {
       $('tutorSubjectErr').textContent = '';
       const { ok, data } = await api(`/tutor/subjects/${subject.id}`, null, 'DELETE');
-      if (ok) await route();
+      if (ok) await refreshTutorSubjects();
       else $('tutorSubjectErr').textContent = data.error || 'Could not remove subject';
     };
     item.append(name, remove);
@@ -1909,6 +1966,50 @@ function renderTutorSubjects(subjects, availableSubjects) {
     option.value = subject.subject_name;
     options.append(option);
   });
+}
+
+function updateTutorSetupChecklist() {
+  if (!currentProfileData) return;
+  renderTutorSetupChecklist(
+    currentTutorSubjects.length > 0,
+    currentTutorAvailability.length > 0,
+    currentProfileData.has_rate_configured
+  );
+}
+
+async function refreshTutorSubjects() {
+  const { ok, data } = await api('/tutor/subjects');
+  if (!ok) {
+    $('tutorSubjectErr').textContent = data.error || 'Could not load your subjects.';
+    return false;
+  }
+  currentTutorSubjects = data.subjects;
+  renderTutorSubjects(data.subjects, data.available_subjects);
+  renderTutorProfileTable();
+  const uploadSubject = $('resourceSubject');
+  uploadSubject.replaceChildren();
+  currentTutorSubjects.forEach(subject => {
+    const option = document.createElement('option');
+    option.value = subject.id;
+    option.textContent = subject.subject_name;
+    uploadSubject.append(option);
+  });
+  await refreshTutorResources();
+  updateTutorSetupChecklist();
+  return true;
+}
+
+async function refreshTutorAvailability() {
+  const { ok, data } = await api('/tutor/availability');
+  if (!ok) {
+    $('availabilityErr').textContent = data.error || 'Could not load your availability.';
+    return false;
+  }
+  currentTutorAvailability = data.availability;
+  renderAvailability(data.availability);
+  renderTutorProfileTable();
+  updateTutorSetupChecklist();
+  return true;
 }
 
 function renderResourceSubjectOptions(subjects, selectedId = null) {
@@ -1964,10 +2065,17 @@ async function refreshTutorResources() {
     option.textContent = `${resource.title} · ${resource.subject_name}`;
     sourceSelect.append(option);
   });
-  status.textContent = data.resources.length
-    ? `${data.resources.length} resource${data.resources.length === 1 ? '' : 's'}`
-    : 'No resources uploaded yet.';
-  data.resources.forEach(resource => {
+  const visibleResources = tutorResourceFilterSubjectId === null
+    ? data.resources
+    : data.resources.filter(
+      resource => Number(resource.subject_id) === tutorResourceFilterSubjectId
+    );
+  status.textContent = visibleResources.length
+    ? `${visibleResources.length} resource${visibleResources.length === 1 ? '' : 's'}`
+    : tutorResourceFilterSubjectId === null
+      ? 'No resources uploaded yet.'
+      : 'No learning materials uploaded for this subject yet.';
+  visibleResources.forEach(resource => {
     const card = document.createElement('article');
     card.className = 'resource-card';
     const heading = document.createElement('h4');
@@ -2767,6 +2875,10 @@ $('resourceUploadForm').onsubmit = async event => {
       return;
     }
     $('resourceUploadForm').reset();
+    if (tutorResourceFilterSubjectId !== null) {
+      $('resourceSubject').value = String(tutorResourceFilterSubjectId);
+      $('resourceSubject').disabled = true;
+    }
     status.textContent = 'Resource uploaded.';
     await refreshTutorResources();
   } catch {
@@ -2782,7 +2894,10 @@ $('tutorSubjectForm').onsubmit = async e => {
   $('tutorSubjectErr').textContent = '';
   if (!subject_name) { $('tutorSubjectErr').textContent = 'Enter a subject name'; return; }
   const { ok, data } = await api('/tutor/subjects', { subject_name });
-  if (ok) { $('tutorSubjectForm').reset(); await route(); }
+  if (ok) {
+    $('tutorSubjectForm').reset();
+    await refreshTutorSubjects();
+  }
   else $('tutorSubjectErr').textContent = data.error || 'Could not add subject';
 };
 
@@ -2817,6 +2932,7 @@ async function loadPublicTutorProfile(tutorId) {
   $('publicProfileContent').classList.remove('hide');
   animateView($('publicProfileContent'));
   $('publicTutorName').textContent = data.full_name;
+  publicTutorSubjectsData = data.subjects;
   const publicTutorAvatar = $('publicTutorAvatar');
   publicTutorAvatar.onerror = () => {
     publicTutorAvatar.onerror = null;
@@ -2843,8 +2959,10 @@ async function loadPublicTutorProfile(tutorId) {
     item.textContent = 'Not available yet.';
     subjects.append(item);
   }
-  const availability = $('publicTutorAvailability');
-  availability.replaceChildren();
+  const days = $('publicTutorDays');
+  const times = $('publicTutorTimes');
+  days.replaceChildren();
+  times.replaceChildren();
   const slotSelect = $('sessionAvailabilitySlot');
   slotSelect.replaceChildren();
   const placeholder = document.createElement('option');
@@ -2853,12 +2971,19 @@ async function loadPublicTutorProfile(tutorId) {
     ? 'Choose a tutor’s published time'
     : 'No weekly time listed';
   slotSelect.append(placeholder);
-  slotSelect.required = data.availability.length > 0;
+  slotSelect.required = true;
+  $('sessionRequestSubmit').disabled = data.availability.length === 0;
   if (data.availability.length) {
-    data.availability.forEach(slot => {
+    const availableDays = [...new Set(data.availability.map(slot => slot.day))];
+    availableDays.forEach(day => {
       const item = document.createElement('li');
-      item.textContent = `${slot.day}: ${slot.start_time}–${slot.end_time}`;
-      availability.append(item);
+      item.textContent = day;
+      days.append(item);
+    });
+    data.availability.forEach(slot => {
+      const timeItem = document.createElement('li');
+      timeItem.textContent = `${slot.day}: ${slot.start_time}–${slot.end_time}`;
+      times.append(timeItem);
       const option = document.createElement('option');
       option.value = slot.id;
       option.dataset.day = slot.day;
@@ -2868,9 +2993,13 @@ async function loadPublicTutorProfile(tutorId) {
       slotSelect.append(option);
     });
   } else {
-    const item = document.createElement('li');
-    item.textContent = 'Not available yet.';
-    availability.append(item);
+    [days, times].forEach(list => {
+      const item = document.createElement('li');
+      item.textContent = 'Not available yet.';
+      list.append(item);
+    });
+    $('sessionRequestFormStatus').textContent =
+      'This tutor has not published availability, so a session request cannot be sent yet.';
   }
   $('publicTutorRate').textContent = data.is_free
     ? 'Free'
@@ -2878,6 +3007,108 @@ async function loadPublicTutorProfile(tutorId) {
   $('messageTutorStatus').textContent = '';
   $('messageTutorLogin').classList.add('hide');
 }
+
+let publicTutorSubjectsData = [];
+
+function openLearningMaterialsDialog(mode) {
+  $('tutorMaterialsManager').classList.toggle('hide', mode !== 'manage');
+  $('publicTutorMaterials').classList.toggle('hide', mode !== 'browse');
+  $('learningMaterialsTitle').textContent = 'My learning materials';
+  $('learningMaterialsDescription').textContent = mode === 'manage'
+    ? `Upload or manage materials for ${currentTutorSubjects.find(
+      subject => Number(subject.id) === tutorResourceFilterSubjectId
+    )?.subject_name || 'this subject'}.`
+    : 'Browse PDFs shared by this tutor, grouped by subject.';
+  $('learningMaterialsDialog').classList.remove('hide');
+  document.body.classList.add('modal-open');
+  $('closeLearningMaterials').focus();
+}
+
+function closeLearningMaterialsDialog() {
+  $('learningMaterialsDialog').classList.add('hide');
+  tutorResourceFilterSubjectId = null;
+  $('resourceSubject').disabled = false;
+  if ($('tutorPublicProfile').classList.contains('hide')) {
+    document.body.classList.remove('modal-open');
+  }
+  if (learningMaterialsReturnFocus?.isConnected) learningMaterialsReturnFocus.focus();
+  learningMaterialsReturnFocus = null;
+}
+
+function openTutorMaterialsForSubject(subject, returnFocus) {
+  tutorResourceFilterSubjectId = Number(subject.id);
+  $('resourceSubject').value = String(subject.id);
+  $('resourceSubject').disabled = true;
+  $('tutorResourceStatus').textContent = '';
+  learningMaterialsReturnFocus = returnFocus;
+  openLearningMaterialsDialog('manage');
+  refreshTutorResources();
+}
+
+async function showPublicTutorMaterials() {
+  learningMaterialsReturnFocus = $('openPublicTutorMaterials');
+  openLearningMaterialsDialog('browse');
+  const list = $('publicTutorMaterialsList');
+  const status = $('publicTutorMaterialsStatus');
+  list.replaceChildren();
+  status.textContent = 'Loading shared PDFs…';
+  if (!publicTutorSubjectsData.length) {
+    status.textContent = 'This tutor has not listed any subjects yet.';
+    return;
+  }
+  const subjectResults = await Promise.all(publicTutorSubjectsData.map(async subject => {
+    const query = new URLSearchParams({
+      subject,
+      tutor_id: String(publicTutorId)
+    });
+    const result = await api(`/api/resources?${query}`);
+    return { subject, result };
+  }));
+  const failedResult = subjectResults.find(item => !item.result.ok);
+  if (failedResult) {
+    status.textContent = failedResult.result.data.error === 'Not authenticated'
+      ? 'Log in to browse learning materials shared by tutors.'
+      : failedResult.result.data.error || 'Could not load this tutor’s learning materials.';
+    return;
+  }
+  status.textContent = '';
+  subjectResults.forEach(({ subject, result }) => {
+    const section = document.createElement('section');
+    section.className = 'resource-card';
+    const heading = document.createElement('h3');
+    heading.textContent = subject;
+    section.append(heading);
+    const pdfs = result.data.resources.filter(resource =>
+      resource.file_type.toLowerCase() === 'application/pdf'
+    );
+    if (!pdfs.length) {
+      const empty = document.createElement('p');
+      empty.textContent = 'No PDFs are currently shared for this subject.';
+      section.append(empty);
+    }
+    pdfs.forEach(resource => {
+      const card = document.createElement('article');
+      card.className = 'resource-card';
+      const title = document.createElement('h4');
+      title.textContent = resource.title;
+      card.append(title);
+      appendResourceMetadata(card, resource);
+      const download = document.createElement('a');
+      download.href =
+        `/api/resources/${resource.id}/download?subject=${encodeURIComponent(subject)}`;
+      download.textContent = 'Download PDF';
+      card.append(download);
+      section.append(card);
+    });
+    list.append(section);
+  });
+}
+
+$('openPublicTutorMaterials').onclick = showPublicTutorMaterials;
+$('closeLearningMaterials').onclick = closeLearningMaterialsDialog;
+$('learningMaterialsDialog').onclick = event => {
+  if (event.target === $('learningMaterialsDialog')) closeLearningMaterialsDialog();
+};
 
 $('sessionAvailabilitySlot').onchange = () => {
   const option = $('sessionAvailabilitySlot').selectedOptions[0];
@@ -2889,7 +3120,9 @@ $('sessionAvailabilitySlot').onchange = () => {
 
 function closeTutorProfile() {
   $('tutorPublicProfile').classList.add('hide');
-  document.body.classList.remove('modal-open');
+  if ($('learningMaterialsDialog').classList.contains('hide')) {
+    document.body.classList.remove('modal-open');
+  }
   publicTutorId = null;
   if (/^\/tutors\/\d+\/?$/.test(window.location.pathname)) {
     window.history.replaceState(null, '', '/');
@@ -2903,7 +3136,9 @@ $('tutorPublicProfile').onclick = event => {
   if (event.target === $('tutorPublicProfile')) closeTutorProfile();
 };
 document.addEventListener('keydown', event => {
-  if (event.key === 'Escape' && !$('videoCallDialog').classList.contains('hide')) {
+  if (event.key === 'Escape' && !$('learningMaterialsDialog').classList.contains('hide')) {
+    closeLearningMaterialsDialog();
+  } else if (event.key === 'Escape' && !$('videoCallDialog').classList.contains('hide')) {
     closeVideoCall();
   } else if (event.key === 'Escape' && !$('quizDialog').classList.contains('hide')) {
     closeQuizDialog();
@@ -3553,27 +3788,35 @@ async function submitSessionRequest(event) {
     formStatus.textContent = 'Choose a proposed date and time.';
     return;
   }
+  if (toLocalDateTimeValue(proposedDate) !== localScheduledFor) {
+    formStatus.textContent = 'Choose a valid local date and time.';
+    return;
+  }
   const scheduledFor = proposedDate.toISOString();
   const selectedSlot = $('sessionAvailabilitySlot').selectedOptions[0];
-  if (selectedSlot?.dataset.day) {
-    const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const pad = value => String(value).padStart(2, '0');
-    const proposedTime = `${pad(proposedDate.getHours())}:${pad(proposedDate.getMinutes())}`;
-    if (
-      weekdays[proposedDate.getDay()] !== selectedSlot.dataset.day
-      || proposedTime < selectedSlot.dataset.start
-      || proposedTime >= selectedSlot.dataset.end
-    ) {
-      formStatus.textContent =
-        `Choose a date and time within the selected ${selectedSlot.dataset.day} slot. This request will not reserve the slot.`;
-      return;
-    }
+  if (!selectedSlot?.dataset.day) {
+    formStatus.textContent = 'Choose one of the tutor’s published availability slots.';
+    return;
+  }
+  const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const pad = value => String(value).padStart(2, '0');
+  const proposedTime = `${pad(proposedDate.getHours())}:${pad(proposedDate.getMinutes())}`;
+  if (
+    weekdays[proposedDate.getDay()] !== selectedSlot.dataset.day
+    || proposedTime < selectedSlot.dataset.start
+    || proposedTime >= selectedSlot.dataset.end
+  ) {
+    formStatus.textContent =
+      `Choose a date and time within the selected ${selectedSlot.dataset.day} slot. This request will not reserve the slot.`;
+    return;
   }
   submitButton.disabled = true;
   formStatus.textContent = 'Sending your request…';
   const { ok, data } = await api('/session-requests', {
     tutor_id: publicTutorId,
     scheduled_for: scheduledFor,
+    availability_id: Number(selectedSlot.value),
+    timezone_offset_minutes: proposedDate.getTimezoneOffset(),
     note
   });
   submitButton.disabled = false;
@@ -3680,7 +3923,7 @@ function renderAvailability(slots) {
     remove.onclick = async () => {
       $('availabilityErr').textContent = '';
       const { ok, data } = await api(`/tutor/availability/${slot.id}`, null, 'DELETE');
-      if (ok) { resetAvailabilityForm(); await route(); }
+      if (ok) { resetAvailabilityForm(); await refreshTutorAvailability(); }
       else $('availabilityErr').textContent = data.error || 'Could not remove slot';
     };
     actions.append(edit, remove);
@@ -3702,7 +3945,7 @@ $('availabilityForm').onsubmit = async e => {
     : `/tutor/availability/${editingAvailabilityId}`;
   const method = editingAvailabilityId === null ? 'POST' : 'PUT';
   const { ok, data } = await api(url, body, method);
-  if (ok) { resetAvailabilityForm(); await route(); }
+  if (ok) { resetAvailabilityForm(); await refreshTutorAvailability(); }
   else $('availabilityErr').textContent = data.error || 'Could not save availability';
 };
 
@@ -3711,37 +3954,20 @@ $('availabilityCancel').onclick = resetAvailabilityForm;
 $('tutorSearchForm').onsubmit = async e => {
   e.preventDefault();
   const subject = $('tutorSearchSubject').value.trim();
+  const name = $('tutorSearchName').value.trim();
   const results = $('tutorSearchResults');
   results.replaceChildren();
-  if (!subject) {
-    $('tutorSearchStatus').textContent = 'Enter a subject to find tutors.';
-    return;
-  }
-  const day = $('tutorSearchDay').value;
-  const startTime = $('tutorSearchStart').value;
-  const endTime = $('tutorSearchEnd').value;
-  if ((day && (!startTime || !endTime)) || (!day && (startTime || endTime))) {
-    $('tutorSearchStatus').textContent = 'Choose a day and enter both times to filter availability.';
-    return;
-  }
-  if (startTime && endTime && startTime >= endTime) {
-    $('tutorSearchStatus').textContent = 'The end time must be later than the start time.';
+  if (!subject && !name) {
+    $('tutorSearchStatus').textContent = 'Enter a tutor name or subject to search.';
     return;
   }
   $('tutorSearchStatus').textContent = 'Searching…';
   const searchButton = e.currentTarget.querySelector('button');
   searchButton.disabled = true;
   results.setAttribute('aria-busy', 'true');
-  const params = new URLSearchParams({
-    subject,
-    rate: $('tutorSearchRate').value,
-    sort: $('tutorSearchSort').value
-  });
-  if (day) {
-    params.set('day', day);
-    params.set('start_time', startTime);
-    params.set('end_time', endTime);
-  }
+  const params = new URLSearchParams();
+  if (subject) params.set('subject', subject);
+  if (name) params.set('name', name);
   const { ok, data } = await api(`/api/tutors?${params}`);
   searchButton.disabled = false;
   results.setAttribute('aria-busy', 'false');
@@ -3749,9 +3975,19 @@ $('tutorSearchForm').onsubmit = async e => {
     $('tutorSearchStatus').textContent = data.error || 'Tutor search failed.';
     return;
   }
-  await loadLearnerResources(subject);
+  if (subject) {
+    await loadLearnerResources(subject);
+  } else {
+    $('learnerResourceStatus').textContent = 'Search by subject to browse shared resources and quizzes.';
+    $('learnerResourceList').replaceChildren();
+    $('learnerQuizStatus').textContent = 'Search by subject to browse published quizzes.';
+    $('learnerQuizList').replaceChildren();
+  }
   if (!data.tutors.length) {
-    $('tutorSearchStatus').textContent = `No tutors found for "${subject}".`;
+    const queryDescription = [subject && `subject "${subject}"`, name && `name "${name}"`]
+      .filter(Boolean)
+      .join(' and ');
+    $('tutorSearchStatus').textContent = `No tutors found for ${queryDescription}.`;
     return;
   }
   $('tutorSearchStatus').textContent = `${data.tutors.length} tutor${data.tutors.length === 1 ? '' : 's'} found.`;
@@ -3782,11 +4018,6 @@ $('tutorSearchForm').onsubmit = async e => {
     const rate = document.createElement('p');
     rate.className = 'tutor-result-detail';
     rate.textContent = tutor.is_free ? 'Free sessions' : `Rate: ${tutor.rate_per_hour} per hour`;
-    const availability = document.createElement('p');
-    availability.className = 'tutor-result-detail';
-    availability.textContent = tutor.availability
-      ? `Available: ${tutor.availability.split('; ').join(' · ')}`
-      : 'Availability not listed yet';
     const profile = document.createElement('button');
     profile.type = 'button';
     profile.className = 'ghost';
@@ -3807,7 +4038,7 @@ $('tutorSearchForm').onsubmit = async e => {
       message.onclick = () => startTutorConversationById(tutor.id, $('tutorSearchStatus'));
       actions.append(message);
     }
-    card.append(heading, subjects, rate, availability, actions);
+    card.append(heading, subjects, rate, actions);
     results.append(card);
   });
 };
@@ -3832,8 +4063,19 @@ $('rateForm').onsubmit = async e => {
     ? { is_free: true }
     : { is_free: false, rate_per_hour: Number(amount) };
   const { ok, data } = await api('/tutor/rate', body, 'PUT');
-  if (ok) await route();
-  else $('rateErr').textContent = data.error || 'Could not save session rate';
+  if (ok) {
+    currentProfileData.is_free = isFree;
+    currentProfileData.rate_per_hour = isFree ? null : Number(amount);
+    currentProfileData.has_rate_configured = true;
+    $('rateSummary').textContent = isFree
+      ? 'Sessions are free.'
+      : `Rate: ${Number(amount)} per hour.`;
+    $('profileTutorRate').textContent = isFree
+      ? 'Free'
+      : `${Number(amount)} per hour`;
+    $('rateErr').textContent = '';
+    updateTutorSetupChecklist();
+  } else $('rateErr').textContent = data.error || 'Could not save session rate';
 };
 
 $('toReg').onclick = () => swap(true);

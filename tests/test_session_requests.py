@@ -37,6 +37,25 @@ class SessionRequestTestCase(unittest.TestCase):
         self.other_id = self.create_user(
             self.other, "Other learner", "other@example.com", "learner"
         )
+        conn = get_db()
+        self.availability_by_day = {}
+        for day in (
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday",
+            "Sunday",
+        ):
+            cursor = conn.execute(
+                """INSERT INTO availability (tutor_id, day, start_time, end_time)
+                   VALUES (?, ?, '00:00', '23:59')""",
+                (self.tutor_id, day),
+            )
+            self.availability_by_day[day] = cursor.lastrowid
+        conn.commit()
+        conn.close()
 
     def create_user(self, client, name, email, role):
         response = client.post(
@@ -65,15 +84,30 @@ class SessionRequestTestCase(unittest.TestCase):
 
     def future_time(self):
         return (datetime.now(timezone.utc) + timedelta(days=2)).replace(
-            second=0, microsecond=0
+            hour=12, minute=0, second=0, microsecond=0
         ).isoformat(timespec="minutes")
 
-    def create_request(self, client=None, scheduled_for=None, tutor_id=None):
+    def create_request(
+        self,
+        client=None,
+        scheduled_for=None,
+        tutor_id=None,
+        availability_id=None,
+        timezone_offset_minutes=0,
+    ):
+        scheduled_for = scheduled_for or self.future_time()
+        scheduled_date = datetime.fromisoformat(scheduled_for.replace("Z", "+00:00"))
+        local_time = scheduled_date.astimezone(
+            timezone(timedelta(minutes=-timezone_offset_minutes))
+        )
+        day = local_time.strftime("%A")
         return (client or self.learner).post(
             "/session-requests",
             json={
                 "tutor_id": self.tutor_id if tutor_id is None else tutor_id,
-                "scheduled_for": scheduled_for or self.future_time(),
+                "scheduled_for": scheduled_for,
+                "availability_id": availability_id or self.availability_by_day[day],
+                "timezone_offset_minutes": timezone_offset_minutes,
                 "note": "Help with calculus",
             },
         )
@@ -123,12 +157,6 @@ class SessionRequestTestCase(unittest.TestCase):
 
     def test_request_creation_is_private_and_duplicate_pending_time_is_rejected(self):
         conn = get_db()
-        conn.execute(
-            """INSERT INTO availability (tutor_id, day, start_time, end_time)
-               VALUES (?, 'Monday', '09:00', '10:00')""",
-            (self.tutor_id,),
-        )
-        conn.commit()
         before = conn.execute(
             "SELECT day, start_time, end_time FROM availability WHERE tutor_id = ?",
             (self.tutor_id,),
@@ -187,6 +215,61 @@ class SessionRequestTestCase(unittest.TestCase):
             ).status_code,
             401,
         )
+
+    def test_request_requires_a_matching_published_slot(self):
+        scheduled_for = self.future_time()
+        local_time = datetime.fromisoformat(scheduled_for)
+        local_day = local_time.strftime("%A")
+        wrong_day = "Monday" if local_day != "Monday" else "Tuesday"
+        mismatch = self.create_request(
+            scheduled_for=scheduled_for,
+            availability_id=self.availability_by_day[wrong_day],
+        )
+        self.assertEqual(mismatch.status_code, 400)
+        self.assertIn("published availability", mismatch.get_json()["error"])
+
+        minutes = local_time.hour * 60 + local_time.minute
+        if minutes < 1437:
+            start_minute, end_minute = minutes + 1, minutes + 2
+        else:
+            start_minute, end_minute = 0, 1
+        start_time = f"{start_minute // 60:02d}:{start_minute % 60:02d}"
+        end_time = f"{end_minute // 60:02d}:{end_minute % 60:02d}"
+        conn = get_db()
+        narrow_slot = conn.execute(
+            """INSERT INTO availability (tutor_id, day, start_time, end_time)
+               VALUES (?, ?, ?, ?)""",
+            (self.tutor_id, local_day, start_time, end_time),
+        ).lastrowid
+        conn.commit()
+        conn.close()
+        outside_slot = self.create_request(
+            scheduled_for=scheduled_for, availability_id=narrow_slot
+        )
+        self.assertEqual(outside_slot.status_code, 400)
+
+        timezone_request = self.create_request(timezone_offset_minutes=840)
+        self.assertEqual(timezone_request.status_code, 201)
+
+        missing_slot = self.learner.post(
+            "/session-requests",
+            json={
+                "tutor_id": self.tutor_id,
+                "scheduled_for": scheduled_for,
+                "timezone_offset_minutes": 0,
+            },
+        )
+        self.assertEqual(missing_slot.status_code, 400)
+        invalid_offset = self.learner.post(
+            "/session-requests",
+            json={
+                "tutor_id": self.tutor_id,
+                "scheduled_for": scheduled_for,
+                "availability_id": self.availability_by_day[local_day],
+                "timezone_offset_minutes": 841,
+            },
+        )
+        self.assertEqual(invalid_offset.status_code, 400)
 
     def test_tutor_can_view_only_requesting_learners_profile_photo(self):
         request_id = self.create_request().get_json()["id"]

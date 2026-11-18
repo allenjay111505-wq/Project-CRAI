@@ -169,6 +169,16 @@ def list_resources():
         return fail(401, "Not authenticated")
     conn = get_db()
     subject_name = request.args.get("subject", "").strip()
+    tutor_id_filter = request.args.get("tutor_id")
+    if tutor_id_filter is not None:
+        if (
+            not tutor_id_filter.isdecimal()
+            or len(tutor_id_filter) > 19
+            or int(tutor_id_filter) < 1
+        ):
+            conn.close()
+            return fail(400, "A valid tutor_id is required")
+        tutor_id_filter = int(tutor_id_filter)
     if user["role"] in ("tutor", "both") and not subject_name:
         rows = conn.execute(
             """SELECT resources.id, resources.title, resources.description,
@@ -187,23 +197,28 @@ def list_resources():
         if not subject_name:
             conn.close()
             return fail(400, "Choose a subject to browse its learning resources")
+        query = """SELECT resources.id, resources.title, resources.description,
+                          resources.file_name, resources.file_type, resources.file_size,
+                          resources.is_published, resources.uploaded_at,
+                          resources.updated_at, subjects.id AS subject_id,
+                          subjects.subject_name, tutor.full_name AS tutor_name
+                   FROM learning_resources AS resources
+                   JOIN subjects ON subjects.id = resources.subject_id
+                   JOIN users AS tutor ON tutor.id = resources.tutor_id
+                   JOIN tutor_subjects
+                     ON tutor_subjects.tutor_id = resources.tutor_id
+                    AND tutor_subjects.subject_id = resources.subject_id
+                   WHERE resources.is_published = 1
+                     AND subjects.subject_name = ? COLLATE NOCASE
+                     AND tutor.role IN ('tutor', 'both')"""
+        params = [subject_name]
+        if tutor_id_filter is not None:
+            query += " AND resources.tutor_id = ?"
+            params.append(tutor_id_filter)
+        query += " ORDER BY resources.uploaded_at DESC, resources.id DESC"
         rows = conn.execute(
-            """SELECT resources.id, resources.title, resources.description,
-                      resources.file_name, resources.file_type, resources.file_size,
-                      resources.is_published, resources.uploaded_at,
-                      resources.updated_at, subjects.id AS subject_id,
-                      subjects.subject_name, tutor.full_name AS tutor_name
-               FROM learning_resources AS resources
-               JOIN subjects ON subjects.id = resources.subject_id
-               JOIN users AS tutor ON tutor.id = resources.tutor_id
-               JOIN tutor_subjects
-                 ON tutor_subjects.tutor_id = resources.tutor_id
-                AND tutor_subjects.subject_id = resources.subject_id
-               WHERE resources.is_published = 1
-                 AND subjects.subject_name = ? COLLATE NOCASE
-                 AND tutor.role IN ('tutor', 'both')
-               ORDER BY resources.uploaded_at DESC, resources.id DESC""",
-            (subject_name,),
+            query,
+            params,
         ).fetchall()
     conn.close()
     return jsonify(resources=[dict(row) for row in rows])
