@@ -6,3 +6,5 @@ crai.db
 .env
 .env.*
 !.env.example
+uploads/profile_photos/
+uploads/resources/
