@@ -1590,4 +1590,10 @@ def mark_conversation_read(conversation_id):
 
 
 if __name__ == "__main__":
-    app.run(port=int(os.environ.get("PORT", 3000)), debug=bool(os.environ.get("FLASK_DEBUG")))
+    # Listen on the local network so the development app can be opened from a
+    # phone or tablet on the same Wi-Fi network.
+    app.run(
+        host=os.environ.get("HOST", "0.0.0.0"),
+        port=int(os.environ.get("PORT", 3000)),
+        debug=bool(os.environ.get("FLASK_DEBUG")),
+    )

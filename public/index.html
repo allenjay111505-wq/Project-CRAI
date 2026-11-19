@@ -3,6 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+try {
+  const savedTheme = localStorage.getItem('crai-theme');
+  if (savedTheme === 'dark' || savedTheme === 'night') document.documentElement.dataset.theme = savedTheme;
+} catch {}
+</script>
 <title>C.R.A.I. — Peer Tutoring</title>
 <style>
 :root{
@@ -192,13 +198,14 @@ input[type="checkbox"]{width:18px;min-height:18px;accent-color:var(--blue)}
 .sidebar-icon{display:grid;width:29px;height:29px;flex:none;place-items:center;border-radius:10px;color:#4779b5;background:#e4eefb;font-size:1rem}
 .sidebar-link.active .sidebar-icon{color:white;background:var(--blue)}
 .sidebar-badge{min-width:21px;height:21px;margin-left:auto}
-.sidebar-account{display:flex;align-items:center;gap:10px;margin-top:auto;padding:16px 6px 4px;border-top:1px solid #e6ebf2}
+.sidebar-account{display:flex;align-items:center;gap:9px;margin-top:auto;padding:16px 6px 4px;border-top:1px solid #e6ebf2}
 .sidebar-avatar{width:38px;height:38px;flex:none;border:2px solid #e6edf6;border-radius:50%;object-fit:cover}
 .sidebar-account-copy{display:grid;min-width:0;flex:1;gap:1px}
 .sidebar-account-copy strong{overflow:hidden;color:var(--navy);font-size:.79rem;text-overflow:ellipsis;white-space:nowrap}
 .sidebar-account-copy span{overflow:hidden;color:var(--muted);font-size:.72rem;text-overflow:ellipsis;white-space:nowrap}
-.sidebar-logout{width:34px;min-height:34px;padding:5px;border:1px solid #e2e8f0;border-radius:10px;color:var(--muted);background:#fff;font-size:1rem}
-.sidebar-logout:hover{border-color:#d6e0ed;color:var(--navy);background:#f6f8fc;box-shadow:none;transform:none}
+.sidebar-logout{display:inline-flex;width:auto;min-height:44px;flex:none;justify-content:center;align-items:center;gap:7px;padding:8px 11px;border:1px solid #f0d8dc;border-radius:12px;color:#a23b4b;background:linear-gradient(145deg,#fff,#fff8f8);font-size:.75rem;font-weight:800;box-shadow:0 3px 9px rgba(112,34,46,.06);transition:background .16s ease,border-color .16s ease,box-shadow .16s ease,transform .16s ease}
+.sidebar-logout svg{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.sidebar-logout:hover{border-color:#e6aab2;color:#8b2637;background:#fff0f2;box-shadow:0 5px 12px rgba(112,34,46,.12);transform:translateY(-1px)}
 .dashboard-shell{width:auto;min-width:0;margin:0;padding:0 0 64px}
 #dashboardHome{min-width:0}
 .dashboard-content-grid{display:block}
@@ -568,6 +575,25 @@ input[type="checkbox"]{width:18px;min-height:18px;accent-color:var(--blue)}
 .public-profile-modal .session-request-form{max-width:none}
 .session-request-dialog{width:min(600px,100%)}
 .session-request-dialog .session-request-form{margin:0;max-width:none}
+.logout-confirm-overlay{z-index:80}
+.logout-confirm-modal{width:min(430px,100%);padding:30px;border-color:#e7eaf0;border-radius:24px;background:radial-gradient(circle at 100% 0,rgba(204,69,88,.08),transparent 38%),linear-gradient(155deg,#fff,#fbfcff);text-align:center;animation:logout-dialog-enter .24s cubic-bezier(.2,.75,.25,1) both}
+.logout-confirm-icon{display:grid;width:58px;height:58px;margin:0 auto 16px;place-items:center;border:1px solid #f1d5da;border-radius:19px;color:#b63e50;background:linear-gradient(145deg,#fff2f4,#ffe6e9);box-shadow:0 8px 20px rgba(164,46,65,.11)}
+.logout-confirm-icon svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.logout-confirm-modal .messages-kicker{margin-bottom:7px;font-size:.68rem}
+.logout-confirm-modal h1{margin:0 0 9px;color:var(--navy);font-size:1.7rem}
+.logout-confirm-message{max-width:320px;margin:0 auto;color:var(--muted);font-size:.94rem}
+.logout-confirm-status{min-height:1.3em;margin:10px 0 0;color:var(--error);font-size:.84rem}
+.logout-confirm-actions{display:flex;justify-content:center;gap:10px;margin-top:24px}
+.logout-confirm-actions button{min-height:44px;padding:9px 15px;border-radius:12px;font-size:.86rem}
+.logout-confirm-actions .ghost{background:var(--paper)}
+.logout-confirm-submit{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-color:#b73547;color:white;background:linear-gradient(145deg,#c94759,#a52e43);box-shadow:0 5px 13px rgba(165,46,67,.2)}
+.logout-confirm-submit:hover{border-color:#932337;color:white;background:linear-gradient(145deg,#b83d50,#90273b);box-shadow:0 7px 18px rgba(165,46,67,.25)}
+.logout-confirm-submit svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+:root[data-theme="night"] .logout-confirm-modal{border-color:#41404a;background:radial-gradient(circle at 100% 0,rgba(190,76,96,.14),transparent 38%),linear-gradient(155deg,#191b25,#12141b)}
+:root[data-theme="night"] .logout-confirm-icon{border-color:#56353f;color:#ffabb6;background:linear-gradient(145deg,#39262d,#281d25);box-shadow:0 8px 22px rgba(0,0,0,.22)}
+:root[data-theme="dark"] .sidebar-logout,:root[data-theme="night"] .sidebar-logout{border-color:#573740;color:#ffabb6;background:linear-gradient(145deg,#35252c,#282027);box-shadow:0 3px 9px rgba(0,0,0,.18)}
+:root[data-theme="dark"] .sidebar-logout:hover,:root[data-theme="night"] .sidebar-logout:hover{border-color:#87505b;color:#ffd1d6;background:linear-gradient(145deg,#442b33,#35232a)}
+@keyframes logout-dialog-enter{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
 .profile-photo-overlay{z-index:30}
 .profile-photo-modal{position:relative;width:min(620px,100%);max-height:calc(100vh - 56px);overflow-y:auto;padding:clamp(20px,3vw,30px);border:1px solid rgba(255,255,255,.7);border-radius:22px;background:linear-gradient(155deg,#fff 0%,#fff 72%,#f8faff 100%);box-shadow:0 28px 90px rgba(3,14,30,.3)}
 .profile-photo-modal-header{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:22px}
@@ -630,7 +656,9 @@ body.modal-open{overflow:hidden}
   .sidebar-link{width:auto;min-height:39px;flex:none;gap:7px;padding:6px 9px;border-radius:11px;font-size:.77rem;white-space:nowrap}
   .sidebar-icon{width:24px;height:24px;border-radius:8px;font-size:.88rem}
   .sidebar-badge{min-width:18px;height:18px}
-  .sidebar-account{display:none}
+  .sidebar-account{display:flex;width:100%;align-items:center;margin-top:9px;padding:9px 10px;border:1px solid var(--line);border-radius:14px;background:var(--paper);box-shadow:0 4px 12px rgba(16,45,86,.045)}
+  .sidebar-account-copy{max-width:calc(100% - 110px)}
+  .sidebar-logout{min-width:88px;min-height:44px;padding:8px 11px}
   .dashboard-shell{padding:0 0 44px}
   .dashboard-rail{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
   .rail-card{padding:16px}
@@ -738,6 +766,116 @@ body.modal-open{overflow:hidden}
 @media(prefers-reduced-motion:reduce){
   *,*:before,*:after{scroll-behavior:auto!important;transition:none!important;animation:none!important}
 }
+:root[data-theme="dark"]{
+  color-scheme:dark;--navy:#dce9fb;--navy-deep:#0b1728;--blue:#91bcff;--paper:#18263a;--canvas:#0e1828;--ink:#e7edf6;--muted:#aab8ca;--line:#35465c;--error:#ff8f9b;--shadow:0 18px 48px rgba(0,0,0,.24)
+}
+:root[data-theme="night"]{
+  color-scheme:dark;--navy:#f1e9d7;--navy-deep:#090c13;--blue:#c1b0ff;--gold:#e8c978;--paper:#141720;--canvas:#090b10;--ink:#e9e5dc;--muted:#aaa9a3;--line:#34353d;--error:#ff929c;--shadow:0 18px 50px rgba(0,0,0,.42)
+}
+:root[data-theme="dark"] .auth-layout,:root[data-theme="night"] .auth-layout,
+:root[data-theme="dark"] .auth-main,:root[data-theme="night"] .auth-main,
+:root[data-theme="dark"] .nav,:root[data-theme="night"] .nav,
+:root[data-theme="dark"] .dashboard-topbar,:root[data-theme="night"] .dashboard-topbar,
+:root[data-theme="dark"] .dashboard-sidebar,:root[data-theme="night"] .dashboard-sidebar,
+:root[data-theme="dark"] .card,:root[data-theme="night"] .card,
+:root[data-theme="dark"] .dashboard-page-card,:root[data-theme="night"] .dashboard-page-card,
+:root[data-theme="dark"] .rail-card,:root[data-theme="night"] .rail-card,
+:root[data-theme="dark"] .rail-stat,:root[data-theme="night"] .rail-stat,
+:root[data-theme="dark"] .profile-detail,:root[data-theme="night"] .profile-detail,
+:root[data-theme="dark"] .notification-settings,:root[data-theme="night"] .notification-settings,
+:root[data-theme="dark"] .request-card,:root[data-theme="night"] .request-card,
+:root[data-theme="dark"] .session-request-form,:root[data-theme="night"] .session-request-form,
+:root[data-theme="dark"] .inbox-panel-header,:root[data-theme="night"] .inbox-panel-header,
+:root[data-theme="dark"] .chat-card,:root[data-theme="night"] .chat-card,
+:root[data-theme="dark"] .chat-empty-state,:root[data-theme="night"] .chat-empty-state,
+:root[data-theme="dark"] .chat-topbar,:root[data-theme="night"] .chat-topbar,
+:root[data-theme="dark"] .chat-composer-wrap,:root[data-theme="night"] .chat-composer-wrap,
+:root[data-theme="dark"] .conversation-item:hover,:root[data-theme="night"] .conversation-item:hover,
+:root[data-theme="dark"] .conversation-item.active,:root[data-theme="night"] .conversation-item.active,
+:root[data-theme="dark"] .message-bubble:not(.own),:root[data-theme="night"] .message-bubble:not(.own),
+:root[data-theme="dark"] .message-compose,:root[data-theme="night"] .message-compose,
+:root[data-theme="dark"] .resource-card,:root[data-theme="night"] .resource-card,
+:root[data-theme="dark"] .quiz-question-card,:root[data-theme="night"] .quiz-question-card,
+:root[data-theme="dark"] .quiz-dialog,:root[data-theme="night"] .quiz-dialog,
+:root[data-theme="dark"] .session-quiz-run,:root[data-theme="night"] .session-quiz-run,
+:root[data-theme="dark"] .session-quiz-builder,:root[data-theme="night"] .session-quiz-builder,
+:root[data-theme="dark"] .video-call-dialog,:root[data-theme="night"] .video-call-dialog,
+:root[data-theme="dark"] .tutor-result,:root[data-theme="night"] .tutor-result,
+:root[data-theme="dark"] .setup-checklist,:root[data-theme="night"] .setup-checklist,
+:root[data-theme="dark"] .setup-checklist-list li,:root[data-theme="night"] .setup-checklist-list li,
+:root[data-theme="dark"] .empty-state,:root[data-theme="night"] .empty-state,
+:root[data-theme="dark"] .public-profile-modal,:root[data-theme="night"] .public-profile-modal,
+:root[data-theme="dark"] .profile-photo-modal,:root[data-theme="night"] .profile-photo-modal,
+:root[data-theme="dark"] .learner-profile-modal,:root[data-theme="night"] .learner-profile-modal,
+:root[data-theme="dark"] .learner-profile-details div,:root[data-theme="night"] .learner-profile-details div,
+:root[data-theme="dark"] .full-tutor-hero,:root[data-theme="night"] .full-tutor-hero,
+:root[data-theme="dark"] .full-tutor-material-subject,:root[data-theme="night"] .full-tutor-material-subject,
+:root[data-theme="dark"] .full-tutor-material,:root[data-theme="night"] .full-tutor-material,
+:root[data-theme="dark"] .profile-photo-dropzone,:root[data-theme="night"] .profile-photo-dropzone,
+:root[data-theme="dark"] .profile-photo-dropzone-icon,:root[data-theme="night"] .profile-photo-dropzone-icon{
+  color:var(--ink);background:var(--paper);border-color:var(--line)
+}
+:root[data-theme="dark"] .dashboard-page h1,:root[data-theme="dark"] .dashboard-page h2,:root[data-theme="dark"] .dashboard-page h3,:root[data-theme="dark"] .dashboard-page h4,
+:root[data-theme="night"] .dashboard-page h1,:root[data-theme="night"] .dashboard-page h2,:root[data-theme="night"] .dashboard-page h3,:root[data-theme="night"] .dashboard-page h4,
+:root[data-theme="dark"] .public-profile-modal h1,:root[data-theme="dark"] .public-profile-modal h2,:root[data-theme="dark"] .public-profile-modal h3,:root[data-theme="dark"] .public-profile-modal h4,
+:root[data-theme="night"] .public-profile-modal h1,:root[data-theme="night"] .public-profile-modal h2,:root[data-theme="night"] .public-profile-modal h3,:root[data-theme="night"] .public-profile-modal h4,
+:root[data-theme="dark"] .auth-main h2,:root[data-theme="night"] .auth-main h2{color:var(--navy)}
+:root[data-theme="dark"] .dashboard-page p,:root[data-theme="dark"] .card p,:root[data-theme="dark"] .auth-main p,
+:root[data-theme="night"] .dashboard-page p,:root[data-theme="night"] .card p,:root[data-theme="night"] .auth-main p{color:var(--muted)}
+:root[data-theme="dark"] .welcome-panel p,:root[data-theme="night"] .welcome-panel p{color:rgba(255,255,255,.82)}
+:root[data-theme="dark"] label,:root[data-theme="night"] label{color:var(--ink)}
+:root[data-theme="dark"] input,:root[data-theme="dark"] select,:root[data-theme="dark"] textarea,
+:root[data-theme="night"] input,:root[data-theme="night"] select,:root[data-theme="night"] textarea{color:var(--ink);background:#101b2b;border-color:var(--line)}
+:root[data-theme="night"] input,:root[data-theme="night"] select,:root[data-theme="night"] textarea{background:#0d1017}
+:root[data-theme="dark"] input::placeholder,:root[data-theme="dark"] textarea::placeholder,
+:root[data-theme="night"] input::placeholder,:root[data-theme="night"] textarea::placeholder{color:#8797aa}
+:root[data-theme="dark"] .ghost,:root[data-theme="dark"] .session-room-profile-link,
+:root[data-theme="night"] .ghost,:root[data-theme="night"] .session-room-profile-link{color:var(--blue);background:var(--paper);border-color:var(--line)}
+:root[data-theme="dark"] .sidebar-link,:root[data-theme="night"] .sidebar-link{color:#b9c9dd}
+:root[data-theme="dark"] .sidebar-link.active,:root[data-theme="night"] .sidebar-link.active{color:var(--blue);background:#20334d;border-color:#354b69}
+:root[data-theme="dark"] .sidebar-icon,:root[data-theme="night"] .sidebar-icon{color:#a8c7f1;background:#263a54}
+:root[data-theme="dark"] .sidebar-link.active .sidebar-icon,:root[data-theme="night"] .sidebar-link.active .sidebar-icon{color:white;background:var(--blue)}
+:root[data-theme="dark"] .topbar-role,:root[data-theme="night"] .topbar-role{color:var(--blue);background:#203047;border-color:var(--line)}
+:root[data-theme="dark"] .tutor-calendar-day,:root[data-theme="night"] .tutor-calendar-day{background:var(--paper)}
+:root[data-theme="dark"] .tutor-calendar-weekdays,:root[data-theme="night"] .tutor-calendar-weekdays,
+:root[data-theme="dark"] .tutor-calendar-day.calendar-empty,:root[data-theme="dark"] .tutor-calendar-day.other-month,
+:root[data-theme="night"] .tutor-calendar-day.calendar-empty,:root[data-theme="night"] .tutor-calendar-day.other-month{background:#121d2c;color:var(--muted)}
+:root[data-theme="dark"] .tutor-calendar-event,:root[data-theme="night"] .tutor-calendar-event{color:#b9f0d0;background:#1b3b31}
+:root[data-theme="dark"] .tutor-calendar-available,:root[data-theme="night"] .tutor-calendar-available{color:#c3d9fa;background:#203650}
+:root[data-theme="dark"] .request-status.accepted,:root[data-theme="night"] .request-status.accepted{color:#b9edce;background:#1b3b30}
+:root[data-theme="dark"] .request-status.declined,:root[data-theme="dark"] .request-status.cancelled,
+:root[data-theme="night"] .request-status.declined,:root[data-theme="night"] .request-status.cancelled{color:#c0c9d4;background:#303845}
+:root[data-theme="dark"] .session-quiz-focus-alert,:root[data-theme="night"] .session-quiz-focus-alert,
+:root[data-theme="dark"] .quiz-focus-notice,:root[data-theme="night"] .quiz-focus-notice{color:#f0d69c;background:#352b1d;border-color:#66532f}
+:root[data-theme="dark"] .session-quiz-shared-result,:root[data-theme="night"] .session-quiz-shared-result{color:#bde8ca;background:#1b3428;border-color:#365c44}
+:root[data-theme="dark"] #profile>p,:root[data-theme="night"] #profile>p,
+:root[data-theme="dark"] .tutor-result .tutor-result-detail,:root[data-theme="night"] .tutor-result .tutor-result-detail,
+:root[data-theme="dark"] .full-tutor-info-grid ul,:root[data-theme="night"] .full-tutor-info-grid ul,
+:root[data-theme="dark"] .session-quiz-ready-options label,:root[data-theme="night"] .session-quiz-ready-options label,
+:root[data-theme="dark"] .session-quiz-upload-form .consent-option,:root[data-theme="night"] .session-quiz-upload-form .consent-option{color:var(--ink)}
+:root[data-theme="dark"] .full-tutor-subjects span,:root[data-theme="night"] .full-tutor-subjects span{color:#c9ddff;background:#203650;border-color:#354b69}
+:root[data-theme="dark"] .full-tutor-material h4,:root[data-theme="night"] .full-tutor-material h4{color:var(--navy)}
+:root[data-theme="dark"] .conversation-item.unread,:root[data-theme="night"] .conversation-item.unread,
+:root[data-theme="dark"] .conversation-item.unread:hover,:root[data-theme="night"] .conversation-item.unread:hover,
+:root[data-theme="dark"] .conversation-item.unread.active,:root[data-theme="night"] .conversation-item.unread.active{color:var(--ink);background:#302b20;border-color:#51472d}
+:root[data-theme="dark"] .conversation-item.unread .conversation-preview,:root[data-theme="night"] .conversation-item.unread .conversation-preview{color:#e6d7b2}
+.theme-picker{display:flex;align-items:center;gap:8px}
+.theme-toggle{position:relative;display:flex;width:70px;min-height:40px;justify-content:space-between;align-items:center;flex:none;padding:0 9px;border:1px solid #dce4ef;border-radius:999px;color:#51657d;background:linear-gradient(145deg,#f8fbff,#e9f1fb);box-shadow:0 3px 8px rgba(16,45,86,.06),inset 0 1px rgba(255,255,255,.85);transition:background .25s ease,border-color .25s ease,box-shadow .25s ease}
+.theme-toggle:hover{border-color:#a9bfdc;background:linear-gradient(145deg,#fff,#edf4fd);box-shadow:0 5px 14px rgba(16,45,86,.12);transform:translateY(-1px)}
+.theme-toggle:focus-visible{outline:3px solid rgba(100,154,224,.55);outline-offset:3px}
+.theme-toggle-icon{z-index:1;display:grid;width:19px;height:19px;place-items:center;transition:color .2s ease,transform .25s ease}
+.theme-toggle-icon svg{display:block;width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.theme-toggle-thumb{position:absolute;top:4px;left:4px;width:30px;height:30px;border:1px solid rgba(255,255,255,.7);border-radius:50%;background:linear-gradient(145deg,#fff,#f4f8fd);box-shadow:0 2px 6px rgba(16,45,86,.16);transition:transform .28s cubic-bezier(.2,.8,.2,1),background .25s ease,box-shadow .25s ease}
+:root[data-theme="night"] .theme-toggle{border-color:#3a3d49;color:#aeb6cb;background:linear-gradient(145deg,#242734,#171a23);box-shadow:0 3px 10px rgba(0,0,0,.25),inset 0 1px rgba(255,255,255,.05)}
+:root[data-theme="night"] .theme-toggle:hover{border-color:#645b83;background:linear-gradient(145deg,#2b2e3d,#1b1d28)}
+:root[data-theme="night"] .theme-toggle-thumb{transform:translateX(30px);border-color:rgba(255,255,255,.1);background:linear-gradient(145deg,#9885df,#7966c2);box-shadow:0 2px 8px rgba(138,117,220,.35)}
+:root[data-theme="night"] .theme-toggle-icon-night{color:#fff}
+:root:not([data-theme="night"]) .theme-toggle-icon-day{color:#ad7416}
+.theme-toggle:active .theme-toggle-thumb{box-shadow:0 1px 3px rgba(16,45,86,.2);transform:scale(.94)}
+:root[data-theme="night"] .theme-toggle:active .theme-toggle-thumb{transform:translateX(30px) scale(.94)}
+.auth-theme-picker{justify-content:flex-end;margin-bottom:18px}
+.dashboard-theme-picker{padding-left:10px;border-left:1px solid var(--line)}
+@media(max-width:760px){.dashboard-theme-picker{padding-left:0;border:0}.theme-toggle{width:66px;min-height:38px}}
 </style>
 </head>
 <body>
@@ -756,6 +894,7 @@ body.modal-open{overflow:hidden}
   </aside>
   <main class="auth-main">
     <div class="auth-content">
+      <div class="theme-picker auth-theme-picker"><button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to night mode" title="Switch to night mode"><span class="theme-toggle-icon theme-toggle-icon-day" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.5"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg></span><span class="theme-toggle-icon theme-toggle-icon-night" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20.2 15.2A8.5 8.5 0 0 1 8.8 3.8 8.6 8.6 0 1 0 20.2 15.2Z"/><path d="m16.5 4 .5 1.5 1.5.5-1.5.5-.5 1.5L16 6.5l-1.5-.5 1.5-.5.5-1.5Z"/></svg></span><span class="theme-toggle-thumb"></span></button></div>
       <div class="auth-mobile-brand"><img class="brand-seal" src="/lnu-logo.png" alt="Leyte Normal University seal"><span>LEYTE NORMAL UNIVERSITY</span></div>
       <div class="auth-heading">
         <p class="sub">PROJECT C.R.A.I.</p>
@@ -818,6 +957,7 @@ body.modal-open{overflow:hidden}
         <span id="dashboardClockTime" class="dashboard-clock-time"></span>
         <span id="dashboardClockDate" class="dashboard-clock-date"></span>
       </time>
+      <div class="theme-picker dashboard-theme-picker"><button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to night mode" title="Switch to night mode"><span class="theme-toggle-icon theme-toggle-icon-day" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.5"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg></span><span class="theme-toggle-icon theme-toggle-icon-night" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20.2 15.2A8.5 8.5 0 0 1 8.8 3.8 8.6 8.6 0 1 0 20.2 15.2Z"/><path d="m16.5 4 .5 1.5 1.5.5-1.5.5-.5 1.5L16 6.5l-1.5-.5 1.5-.5.5-1.5Z"/></svg></span><span class="theme-toggle-thumb"></span></button></div>
       <span id="topbarRole" class="topbar-role"></span><span class="topbar-campus">Leyte Normal University</span>
     </div>
   </header>
@@ -853,7 +993,9 @@ body.modal-open{overflow:hidden}
       <div class="sidebar-account">
         <img id="sidebarAvatar" src="/default-avatar.svg" alt="" class="sidebar-avatar">
         <div class="sidebar-account-copy"><strong id="sidebarName"></strong><span id="sidebarStudentId"></span></div>
-        <button id="logoutBtn" class="sidebar-logout" type="button" aria-label="Log out">↗</button>
+        <button id="logoutBtn" class="sidebar-logout" type="button" aria-label="Log out">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M10 17l5-5-5-5M15 12H3"/><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6"/></svg><span>Log out</span>
+        </button>
       </div>
     </aside>
   <main class="dashboard-shell">
@@ -1315,6 +1457,24 @@ body.modal-open{overflow:hidden}
   </section>
 </div>
 
+<div id="logoutConfirmDialog" class="public-profile-overlay logout-confirm-overlay hide" role="presentation">
+  <section class="public-profile-modal logout-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="logoutConfirmTitle" aria-describedby="logoutConfirmMessage">
+    <div class="logout-confirm-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path d="M10 17l5-5-5-5M15 12H3"/><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6"/></svg>
+    </div>
+    <p class="messages-kicker">C.R.A.I. · Account</p>
+    <h1 id="logoutConfirmTitle">Log out?</h1>
+    <p id="logoutConfirmMessage" class="logout-confirm-message">Are you sure you want to log out? You can sign back in anytime.</p>
+    <p id="logoutConfirmStatus" class="logout-confirm-status" role="status" aria-live="polite"></p>
+    <div class="logout-confirm-actions">
+      <button id="logoutConfirmCancel" class="ghost" type="button">Stay signed in</button>
+      <button id="logoutConfirmSubmit" class="logout-confirm-submit" type="button">
+        <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M10 17l5-5-5-5M15 12H3"/><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6"/></svg>Log out
+      </button>
+    </div>
+  </section>
+</div>
+
 <div id="sessionRequestConfirmDialog" class="public-profile-overlay session-request-confirm-overlay hide" role="presentation">
   <section class="public-profile-modal session-request-dialog" role="dialog" aria-modal="true" aria-labelledby="sessionRequestConfirmTitle">
     <header class="public-profile-modal-header">
@@ -1559,6 +1719,21 @@ body.modal-open{overflow:hidden}
 
 <script>
 const $ = id => document.getElementById(id);
+const applyTheme = theme => {
+  const selectedTheme = theme === 'night' || theme === 'dark' ? 'night' : 'light';
+  if (selectedTheme === 'light') delete document.documentElement.dataset.theme;
+  else document.documentElement.dataset.theme = 'night';
+  const isNight = selectedTheme === 'night';
+  document.querySelectorAll('[data-theme-toggle]').forEach(button => {
+    button.setAttribute('aria-label', isNight ? 'Switch to day mode' : 'Switch to night mode');
+    button.title = isNight ? 'Switch to day mode' : 'Switch to night mode';
+  });
+  try { localStorage.setItem('crai-theme', selectedTheme); } catch {}
+};
+document.querySelectorAll('[data-theme-toggle]').forEach(button => {
+  button.addEventListener('click', () => applyTheme(document.documentElement.dataset.theme === 'night' ? 'light' : 'night'));
+});
+applyTheme(document.documentElement.dataset.theme || 'light');
 const api = async (url, body, method = body ? 'POST' : 'GET') => {
   const options = { method };
   if (body) { options.headers = { 'Content-Type': 'application/json' }; options.body = JSON.stringify(body); }
@@ -1594,6 +1769,7 @@ const show = view => {
   if (wasHidden) animateView(target);
 };
 let activeConversation = null;
+let logoutReturnFocus = null;
 let publicTutorId = null;
 let pendingSessionTutorId = null;
 let pendingSessionSubjectId = null;
@@ -3717,7 +3893,9 @@ $('tutorPublicProfile').onclick = event => {
   if (event.target === $('tutorPublicProfile')) closeTutorProfile();
 };
 document.addEventListener('keydown', event => {
-  if (event.key === 'Escape' && !$('sessionRequestSuccessDialog').classList.contains('hide')) {
+  if (event.key === 'Escape' && !$('logoutConfirmDialog').classList.contains('hide')) {
+    closeLogoutConfirmation();
+  } else if (event.key === 'Escape' && !$('sessionRequestSuccessDialog').classList.contains('hide')) {
     closeSessionRequestSuccess();
   } else if (event.key === 'Escape' && !$('sessionSubjectDialog').classList.contains('hide')) {
     closeSessionSubjectSelection();
@@ -5272,15 +5450,47 @@ $('regForm').onsubmit = async e => {
   else $('rErr').textContent = data.error || 'Registration failed';
 };
 
-$('logoutBtn').onclick = async () => {
+function openLogoutConfirmation() {
+  logoutReturnFocus = $('logoutBtn');
+  $('logoutConfirmStatus').textContent = '';
+  $('logoutConfirmSubmit').disabled = false;
+  $('logoutConfirmDialog').classList.remove('hide');
+  document.body.classList.add('modal-open');
+  $('logoutConfirmCancel').focus();
+}
+
+function closeLogoutConfirmation(restoreFocus = true) {
+  $('logoutConfirmDialog').classList.add('hide');
+  document.body.classList.remove('modal-open');
+  if (restoreFocus && logoutReturnFocus?.isConnected) logoutReturnFocus.focus();
+  logoutReturnFocus = null;
+}
+
+async function confirmLogout() {
+  const button = $('logoutConfirmSubmit');
+  button.disabled = true;
+  $('logoutConfirmStatus').textContent = 'Signing out…';
+  const { ok, data } = await api('/logout', null, 'POST');
+  if (!ok) {
+    $('logoutConfirmStatus').textContent = data.error || 'Could not log out. Please try again.';
+    button.disabled = false;
+    return;
+  }
   stopMessagePolling();
   stopDashboardClock();
   stopRealtimeChat();
   activeConversation = null;
-  await api('/logout', null, 'POST');
+  closeLogoutConfirmation(false);
   show('auth');
   swap(false);
-  $('notice').textContent = '';
+  $('notice').textContent = 'You have been logged out.';
+}
+
+$('logoutBtn').onclick = openLogoutConfirmation;
+$('logoutConfirmCancel').onclick = closeLogoutConfirmation;
+$('logoutConfirmSubmit').onclick = confirmLogout;
+$('logoutConfirmDialog').onclick = event => {
+  if (event.target === $('logoutConfirmDialog')) closeLogoutConfirmation();
 };
 $('pushNotificationsToggle').onclick = togglePushNotifications;
 document.querySelectorAll('.soon').forEach(b => b.onclick = () => { $('soonMsg').textContent = '"' + b.textContent + '" arrives in a later sprint.'; });
