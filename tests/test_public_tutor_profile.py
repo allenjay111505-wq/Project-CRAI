@@ -58,6 +58,15 @@ class PublicTutorProfileTestCase(unittest.TestCase):
         self.assertIn(b"<th scope=\"col\">Specific time</th>", response.data)
         self.assertIn(b"<th scope=\"col\">Learning materials</th>", response.data)
         self.assertIn(b"resourceUploadForm", response.data)
+        self.assertIn(b'Save subject and availability', response.data)
+        self.assertNotIn(b'tutorSubjectForm', response.data)
+        tutor_profile_close = response.data.index(b'id="tutorPublicProfile"')
+        materials_dialog = response.data.index(b'id="learningMaterialsDialog"')
+        self.assertLess(tutor_profile_close, materials_dialog)
+        self.assertRegex(
+            response.data,
+            rb'</section>\s*</div>\s*<div id="learningMaterialsDialog"',
+        )
         self.assertIn(b"tutorSearchName", response.data)
         self.assertNotIn(b"tutorSearchDay", response.data)
         self.assertNotIn(b"tutorSearchRate", response.data)

@@ -175,6 +175,16 @@ def public_tutor_profile_page(tutor_id):
     return app.send_static_file("index.html")
 
 
+@app.get("/tutors/<int:tutor_id>/profile")
+def full_tutor_profile_page(tutor_id):
+    return app.send_static_file("index.html")
+
+
+@app.get("/sessions/<int:request_id>")
+def tutoring_session_page(request_id):
+    return app.send_static_file("index.html")
+
+
 @app.get("/tutors/search")
 @app.get("/api/tutors")
 def search_tutors():
@@ -256,7 +266,7 @@ def public_tutor_profile(tutor_id):
         conn.close()
         return fail(404, "Tutor profile not found")
     subjects = conn.execute(
-        """SELECT subjects.subject_name
+        """SELECT subjects.id, subjects.subject_name
            FROM tutor_subjects
            JOIN subjects ON subjects.id = tutor_subjects.subject_id
            WHERE tutor_subjects.tutor_id = ?
@@ -264,7 +274,7 @@ def public_tutor_profile(tutor_id):
         (tutor_id,),
     ).fetchall()
     availability = conn.execute(
-        """SELECT id, day, start_time, end_time FROM availability
+        """SELECT id, subject_id, day, start_time, end_time FROM availability
            WHERE tutor_id = ?
            ORDER BY CASE day
                WHEN 'Monday' THEN 1 WHEN 'Tuesday' THEN 2
@@ -276,6 +286,7 @@ def public_tutor_profile(tutor_id):
     profile = dict(tutor)
     profile["has_profile_photo"] = profile.pop("profile_photo") is not None
     profile["subjects"] = [row["subject_name"] for row in subjects]
+    profile["subject_options"] = [dict(row) for row in subjects]
     profile["availability"] = [dict(slot) for slot in availability]
     profile.update(tutor_rate_data(conn, tutor_id))
     conn.close()
@@ -295,7 +306,7 @@ def register():
         return fail(400, "Invalid email format")
     if len(str(d["password"])) < 8:
         return fail(400, "Password must be at least 8 characters")
-    if d["role"] not in ("tutor", "learner", "both"):
+    if d["role"] not in ("tutor", "learner"):
         return fail(400, "Invalid role")
     try:
         year = int(d["year_level"])
@@ -774,6 +785,11 @@ def update_tutor_subject():
                    WHERE tutor_id = ? AND subject_id = ?""",
                 (replacement_id, uid, subject_id),
             )
+            conn.execute(
+                """UPDATE availability SET subject_id = ?
+                   WHERE tutor_id = ? AND subject_id = ?""",
+                (replacement_id, uid, subject_id),
+            )
         conn.commit()
     finally:
         conn.close()
@@ -813,6 +829,11 @@ def remove_tutor_subject(subject_id=None):
             return fail(400, "Tutors must have at least one subject")
         conn.execute(
             "DELETE FROM tutor_subjects WHERE tutor_id = ? AND subject_id = ?",
+            (uid, subject_id),
+        )
+        conn.execute(
+            """UPDATE availability SET subject_id = NULL
+               WHERE tutor_id = ? AND subject_id = ?""",
             (uid, subject_id),
         )
         conn.commit()
@@ -858,8 +879,11 @@ def tutor_availability():
         return error
     conn = get_db()
     slots = conn.execute(
-        """SELECT id, day, start_time, end_time FROM availability
-           WHERE tutor_id = ?
+        """SELECT availability.id, availability.subject_id, subjects.subject_name,
+                  availability.day, availability.start_time, availability.end_time
+           FROM availability
+           LEFT JOIN subjects ON subjects.id = availability.subject_id
+           WHERE availability.tutor_id = ?
            ORDER BY CASE day
                WHEN 'Monday' THEN 1 WHEN 'Tuesday' THEN 2
                WHEN 'Wednesday' THEN 3 WHEN 'Thursday' THEN 4
@@ -869,6 +893,59 @@ def tutor_availability():
     ).fetchall()
     conn.close()
     return jsonify(availability=[dict(slot) for slot in slots])
+
+
+@app.post("/tutor/teaching-profile")
+def add_tutor_teaching_profile():
+    uid, error = require_tutor()
+    if error:
+        return error
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return fail(400, "Teaching profile must be a JSON object")
+    subject_name = data.get("subject_name")
+    if not isinstance(subject_name, str) or not subject_name.strip():
+        return fail(400, "Subject name is required")
+    subject_name = subject_name.strip()
+    if len(subject_name) > 100:
+        return fail(400, "Subject name must be 100 characters or fewer")
+    parsed, error = parse_availability(data)
+    if error:
+        return fail(400, error)
+    day, start_time, end_time = parsed
+
+    conn = get_db()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        if has_availability_overlap(conn, uid, day, start_time, end_time):
+            conn.rollback()
+            return fail(409, "This time overlaps another slot on that day")
+        subject = conn.execute(
+            "SELECT id FROM subjects WHERE subject_name = ? COLLATE NOCASE",
+            (subject_name,),
+        ).fetchone()
+        if subject:
+            subject_id = subject["id"]
+        else:
+            subject_id = conn.execute(
+                "INSERT INTO subjects (subject_name) VALUES (?)",
+                (subject_name,),
+            ).lastrowid
+        conn.execute(
+            """INSERT OR IGNORE INTO tutor_subjects (tutor_id, subject_id)
+               VALUES (?, ?)""",
+            (uid, subject_id),
+        )
+        conn.execute(
+            """INSERT INTO availability
+               (tutor_id, subject_id, day, start_time, end_time)
+               VALUES (?, ?, ?, ?, ?)""",
+            (uid, subject_id, day, start_time, end_time),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return jsonify(message="Subject and availability saved"), 201
 
 
 @app.post("/tutor/availability")
@@ -918,7 +995,7 @@ def update_tutor_availability(slot_id=None):
     try:
         conn.execute("BEGIN IMMEDIATE")
         slot = conn.execute(
-            "SELECT 1 FROM availability WHERE id = ? AND tutor_id = ?",
+            "SELECT subject_id FROM availability WHERE id = ? AND tutor_id = ?",
             (slot_id, uid),
         ).fetchone()
         if not slot:
@@ -927,10 +1004,29 @@ def update_tutor_availability(slot_id=None):
         if has_availability_overlap(conn, uid, day, start_time, end_time, slot_id):
             conn.rollback()
             return fail(409, "This time overlaps another slot on that day")
+        subject_id = slot["subject_id"]
+        if "subject_id" in data:
+            subject_id = data["subject_id"]
+            if (
+                isinstance(subject_id, bool)
+                or not isinstance(subject_id, int)
+                or subject_id < 1
+            ):
+                conn.rollback()
+                return fail(400, "A valid subject_id is required")
+            assignment = conn.execute(
+                """SELECT 1 FROM tutor_subjects
+                   WHERE tutor_id = ? AND subject_id = ?""",
+                (uid, subject_id),
+            ).fetchone()
+            if not assignment:
+                conn.rollback()
+                return fail(400, "Choose a subject from your teaching profile")
         conn.execute(
-            """UPDATE availability SET day = ?, start_time = ?, end_time = ?
+            """UPDATE availability
+               SET subject_id = ?, day = ?, start_time = ?, end_time = ?
                WHERE id = ? AND tutor_id = ?""",
-            (day, start_time, end_time, slot_id, uid),
+            (subject_id, day, start_time, end_time, slot_id, uid),
         )
         conn.commit()
     finally:

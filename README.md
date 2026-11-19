@@ -3,7 +3,7 @@
 Role-based peer tutoring with tutor discovery, availability, private subject resources, source-grounded quiz drafts, session requests, messaging, and optional browser-based video calls.
 Stack: Python + Flask, SQLite (built into Python), hashed passwords (Werkzeug), signed httpOnly session cookie, and a plain HTML/CSS/JS frontend.
 
-Tutors can add subjects from the shared subject list or enter a new subject, and remove subjects from their profile. A tutor must keep at least one subject.
+Tutors manage subjects and their weekly availability together in one Tutor Workspace list. Adding a subject and its first availability slot uses one save action; existing subjects can be selected to add more slots. Subjects and slots can still be removed or edited separately. A tutor must keep at least one subject.
 
 ## Run locally
 
@@ -21,9 +21,9 @@ The database file `crai.db` and all tables are created automatically from `schem
 Messages and conversations are stored locally in SQLite.
 New resource, quiz, assignment, attempt, and focus-indicator tables are created additively by the existing idempotent schema initialization; existing account and tutoring data is not dropped.
 
-Tutors manage their own weekly availability. Learners search by tutor name and/or subject, then view availability on the tutor profile and propose a time within a published slot. The server validates the selected slot; a request does not reserve or modify it. Availability has no separate tutor-timezone setting, so schedule matching assumes tutor and learner use the same local timezone.
+Tutors manage weekly availability by subject and time. Learners choose a subject, then select a future occurrence of one of that tutor's weekly slots. Any accepted session blocks that tutor's time slot across subjects; tutors see accepted sessions and open slots in a month calendar.
 
-At the bottom of the tutor’s **My Profile** page, a subject-per-row table shows each subject, available days and times, and a **My learning materials** button for that subject. The button opens the subject’s materials and upload/management controls. Public tutor profiles group shared PDFs by subject. Tutor resources accept UTF-8 TXT, Markdown, PDF, and DOCX uploads up to 5 MB. Files are stored outside `public/`, use generated storage names, and are served only through permission-checked download routes. Quiz generation currently extracts readable text from TXT, Markdown, and DOCX; PDF files remain downloadable but are not supported as generation sources.
+At the bottom of the tutor’s **My Profile** page, a subject-per-row table shows each subject, its available days and times, and a **My learning materials** button for that subject. The button opens the subject’s materials and upload/management controls. Public tutor profiles group shared PDFs by subject. Tutor resources accept UTF-8 TXT, Markdown, PDF, and DOCX uploads up to 5 MB. Files are stored outside `public/`, use generated storage names, and are served only through permission-checked download routes. Quiz generation currently extracts readable text from TXT, Markdown, and DOCX; PDF files remain downloadable but are not supported as generation sources.
 
 Sample logins after seeding (password `password123`): `ana@example.com` (tutor), `ben@example.com` (learner), `cara@example.com` (both).
 
@@ -62,6 +62,10 @@ Quiz generation is disabled unless `GEMINI_API_KEY` is configured. Before genera
 Each quiz has Test 1 multiple-choice and Test 2 identification questions. Tutors can edit drafts, review answer keys, regenerate, publish, and assign to a learner by account ID. Learners see questions without answer keys, can submit answers, and see their score and submission time afterward. Answer keys remain tutor-only. Identification answers are checked case-insensitively with whitespace normalized.
 
 Focus-event monitoring is optional per quiz and off by default. When a tutor enables it, the learner sees what is recorded and must explicitly opt in to monitoring; declining allows an unmonitored attempt. Only quiz-page hidden/focus-loss event types and server timestamps are stored. Tutors see these as review indicators, not proof of cheating. No external tabs, applications, browsing history, outside keystrokes, or screen contents are collected; events never cause automatic penalties.
+
+Accepted session requests include a dedicated session room. Learners join the call and take quizzes prepared specifically for that session. For monitored attempts, tutors in the room see focus indicators within a few seconds; browser focus events indicate that the quiz page became hidden or lost focus, but do not identify which tab or application was opened.
+
+During an accepted session, the tutor can upload private lesson notes, ask Gemini to draft a quiz, review and edit it, and prepare it for that learner. The learner marks when they are ready; the tutor starts the quiz after the call connects. The call stays in a compact pinned panel while the quiz is open. Learners may separately consent to focus-event monitoring and AI-assisted grading of typed answers. AI grading uses the question, tutor-reviewed answer, and source excerpt; if Gemini is unavailable or the learner does not consent, identification answers use exact answer-key matching. Results remain hidden from the learner until the tutor reviews and shares them. Focus-event monitoring can report page-hidden or focus changes, but browser code cannot prevent Alt+Tab or identify another tab or application.
 
 ## Video calls
 
@@ -103,7 +107,8 @@ The app sends notifications for new messages and session request creation or sta
 | GET | `/conversations/<id>/messages` | Lists messages in a conversation the logged-in user participates in |
 | POST | `/conversations/<id>/messages` | Sends a non-empty message (up to 2,000 characters) in a conversation |
 | PUT | `/conversations/<id>/read` | Marks incoming messages in a participant's conversation as read |
-| POST | `/session-requests` | Learner proposes a future time within the selected tutor availability slot, with an optional note |
+| GET | `/api/tutors/<id>/session-slots?subject_id=<id>&timezone_offset_minutes=<offset>` | Lists the next 90 days of matching weekly tutor slots and marks any accepted tutor slot as booked |
+| POST | `/session-requests` | Learner requests a tutor session for a selected subject, availability slot, and future date/time |
 | GET | `/session-requests` | Lists requests involving the logged-in user, with sent/received direction and status |
 | GET | `/session-requests/<id>/learner-profile` | Returns the learner's name, email, student number, course, year level, and photo availability to the tutor who received that request |
 | PUT | `/session-requests/<id>` | Tutor accepts/declines a pending request, or the learner cancels it |
@@ -121,6 +126,11 @@ The app sends notifications for new messages and session request creation or sta
 | POST | `/api/quiz-attempts/<id>/focus-events` | Records only consented hidden/blur event types with server timestamps |
 | POST | `/api/quiz-attempts/<id>/submit` | Saves answers and submission time; returns the score, not the answer key |
 | GET | `/api/quizzes/<id>/attempts` | Tutor sees learner answers, results, and non-proof focus indicators |
+| GET | `/api/session-requests/<id>/quiz-runs` | Lists session-only quizzes, learner readiness, progress, focus indicators, and results |
+| POST | `/api/session-requests/<id>/quiz-runs` | Prepares a reviewed quiz draft for an accepted session |
+| POST | `/api/session-quiz-runs/<id>/ready` | Learner confirms readiness and monitoring/grading preferences |
+| POST | `/api/session-quiz-runs/<id>/start` | Tutor starts the quiz after the learner is ready |
+| POST | `/api/session-quiz-runs/<id>/release` | Tutor shares a submitted result with the learner |
 | GET | `/api/session-requests/<id>/video-config` | ICE configuration for a participant in an accepted request |
 | WebSocket | `/ws/calls/<id>` | Authenticated WebRTC signaling for accepted-request participants only |
 | GET | `/tutors/search?subject=<name>&name=<partial>` | Searches tutors by case-insensitive subject and/or partial tutor name; when both are supplied, both must match |
@@ -132,10 +142,13 @@ The app sends notifications for new messages and session request creation or sta
 | DELETE | `/tutor/subjects` | Removes an assigned subject using `{ "subject_id": 1 }`; the last subject cannot be removed |
 | DELETE | `/tutor/subjects/<id>` | Removes a subject from the logged-in tutor; the last subject cannot be removed |
 | GET | `/tutors/<id>` | Public-facing tutor profile page |
+| GET | `/tutors/<id>/profile` | Full tutor profile with published learning materials for learners |
+| GET | `/sessions/<session-request-id>` | Dedicated session room for an accepted request; shows the tutor profile, call controls, and the tutor's published quizzes |
 | GET | `/api/tutors/<id>` | Public tutor name, subjects, weekly availability, and session rate |
 | GET | `/tutor/rate` | Returns whether the logged-in tutor offers free sessions or their hourly rate |
 | PUT | `/tutor/rate` | Saves `{ "is_free": true }` or `{ "is_free": false, "rate_per_hour": 25 }` |
 | GET | `/tutor/availability` | Lists the logged-in tutor's weekly slots by day and start time |
+| POST | `/tutor/teaching-profile` | Atomically adds a tutor subject and a weekly availability slot |
 | POST | `/tutor/availability` | Adds a weekly slot; overlapping slots on the same day are rejected |
 | PUT | `/tutor/availability` | Edits a slot using `{ "slot_id": 1, "day": "Monday", "start_time": "09:00", "end_time": "10:00" }` |
 | DELETE | `/tutor/availability` | Removes a slot using `{ "slot_id": 1 }` |
@@ -143,7 +156,7 @@ The app sends notifications for new messages and session request creation or sta
 | DELETE | `/tutor/availability/<id>` | Removes one of the logged-in tutor's slots |
 | POST | `/logout` | Ends the session |
 
-Session requests are proposals only. An accepted request records agreement between the users but does not reserve a calendar slot or process payment.
+Learners confirm the selected subject and date/time before sending a session request. The tutor can accept or decline it. Accepting reserves that tutor's time so another learner cannot book the same slot, even for a different subject. The app does not process payments.
 
 ## Structure
 
@@ -162,4 +175,4 @@ public/default-avatar.svg   fallback avatar when a user has not uploaded a photo
 
 ## Out of scope (later sprints)
 
-Calendar booking/reservation, ratings, and payments. Session requests are proposed and accepted in-app but do not reserve tutor availability. Tutor discovery currently supports name and subject search only.
+Ratings and payments. Tutor discovery currently supports name and subject search only.

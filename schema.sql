@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS tutor_subjects (
 CREATE TABLE IF NOT EXISTS availability (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   tutor_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  subject_id INTEGER REFERENCES subjects(id) ON DELETE SET NULL,
   day TEXT NOT NULL,
   start_time TEXT NOT NULL,
   end_time TEXT NOT NULL
@@ -65,7 +66,9 @@ CREATE TABLE IF NOT EXISTS session_requests (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   tutor_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   learner_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  scheduled_for TEXT NOT NULL,
+  requested_subject_id INTEGER REFERENCES subjects(id) ON DELETE SET NULL,
+  scheduled_for TEXT,
+  timezone_offset_minutes INTEGER,
   note TEXT NOT NULL DEFAULT '',
   status TEXT NOT NULL DEFAULT 'pending'
     CHECK (status IN ('pending', 'accepted', 'declined', 'cancelled')),
@@ -139,6 +142,8 @@ CREATE TABLE IF NOT EXISTS quiz_attempts (
   focus_monitoring_enabled INTEGER NOT NULL DEFAULT 0
     CHECK (focus_monitoring_enabled IN (0, 1)),
   focus_consent INTEGER NOT NULL DEFAULT 0 CHECK (focus_consent IN (0, 1)),
+  ai_grading_consent INTEGER NOT NULL DEFAULT 0 CHECK (ai_grading_consent IN (0, 1)),
+  grading_method TEXT NOT NULL DEFAULT 'answer_key',
   answers_json TEXT NOT NULL DEFAULT '{}',
   score INTEGER,
   total_questions INTEGER
@@ -153,3 +158,19 @@ CREATE TABLE IF NOT EXISTS quiz_focus_events (
 );
 CREATE INDEX IF NOT EXISTS idx_quiz_focus_events_attempt
   ON quiz_focus_events (attempt_id, occurred_at);
+CREATE TABLE IF NOT EXISTS session_quiz_runs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  session_request_id INTEGER NOT NULL REFERENCES session_requests(id) ON DELETE CASCADE,
+  quiz_id INTEGER NOT NULL REFERENCES quizzes(id) ON DELETE CASCADE,
+  attempt_id INTEGER UNIQUE REFERENCES quiz_attempts(id) ON DELETE SET NULL,
+  status TEXT NOT NULL DEFAULT 'waiting'
+    CHECK (status IN ('waiting', 'started', 'submitted', 'released')),
+  learner_ready INTEGER NOT NULL DEFAULT 0 CHECK (learner_ready IN (0, 1)),
+  focus_consent INTEGER NOT NULL DEFAULT 0 CHECK (focus_consent IN (0, 1)),
+  ai_grading_consent INTEGER NOT NULL DEFAULT 0 CHECK (ai_grading_consent IN (0, 1)),
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (session_request_id, quiz_id)
+);
+CREATE INDEX IF NOT EXISTS idx_session_quiz_runs_session
+  ON session_quiz_runs (session_request_id, created_at);
