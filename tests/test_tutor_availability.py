@@ -48,6 +48,17 @@ class TutorAvailabilityTestCase(unittest.TestCase):
             json={"day": day, "start_time": start_time, "end_time": end_time},
         )
 
+    def add_teaching_profile(self, subject_name, day, start_time, end_time):
+        return self.client.post(
+            "/tutor/teaching-profile",
+            json={
+                "subject_name": subject_name,
+                "day": day,
+                "start_time": start_time,
+                "end_time": end_time,
+            },
+        )
+
     def test_tutor_endpoints_require_tutor_login(self):
         self.assertEqual(self.client.get("/tutor/availability").status_code, 401)
         self.assertEqual(
@@ -109,6 +120,77 @@ class TutorAvailabilityTestCase(unittest.TestCase):
             len(self.client.get("/tutor/availability").get_json()["availability"]),
             2,
         )
+
+    def test_subject_and_availability_are_saved_together(self):
+        self.create_user()
+        response = self.add_teaching_profile(
+            "Biology", "Monday", "09:00", "10:00"
+        )
+        self.assertEqual(response.status_code, 201)
+        subjects = self.client.get("/tutor/subjects").get_json()["subjects"]
+        slots = self.client.get("/tutor/availability").get_json()["availability"]
+        self.assertEqual([subject["subject_name"] for subject in subjects], ["Biology"])
+        self.assertEqual(
+            [(slot["day"], slot["start_time"], slot["end_time"]) for slot in slots],
+            [("Monday", "09:00", "10:00")],
+        )
+
+        duplicate_subject = self.add_teaching_profile(
+            "biology", "Tuesday", "09:00", "10:00"
+        )
+        self.assertEqual(duplicate_subject.status_code, 201)
+        self.assertEqual(
+            len(self.client.get("/tutor/subjects").get_json()["subjects"]), 1
+        )
+
+    def test_combined_subject_and_availability_save_is_atomic(self):
+        self.create_user()
+        self.assertEqual(
+            self.add_teaching_profile("Biology", "Monday", "09:00", "10:00").status_code,
+            201,
+        )
+        overlap = self.add_teaching_profile(
+            "Chemistry", "Monday", "09:30", "10:30"
+        )
+        self.assertEqual(overlap.status_code, 409)
+        self.assertEqual(
+            [subject["subject_name"] for subject in self.client.get(
+                "/tutor/subjects"
+            ).get_json()["subjects"]],
+            ["Biology"],
+        )
+
+    def test_combined_subject_and_availability_route_enforces_auth_and_validation(self):
+        payload = {
+            "subject_name": "Biology",
+            "day": "Monday",
+            "start_time": "09:00",
+            "end_time": "10:00",
+        }
+        self.assertEqual(
+            app.test_client().post("/tutor/teaching-profile", json=payload).status_code,
+            401,
+        )
+        self.create_user("learner")
+        self.assertEqual(
+            self.client.post("/tutor/teaching-profile", json=payload).status_code,
+            403,
+        )
+
+        self.create_user("tutor", "second-tutor@example.com")
+        for invalid_payload in (
+            {**payload, "subject_name": ""},
+            {**payload, "subject_name": "x" * 101},
+            {**payload, "day": "Funday"},
+            {**payload, "start_time": "10:00", "end_time": "09:00"},
+        ):
+            with self.subTest(payload=invalid_payload):
+                self.assertEqual(
+                    self.client.post(
+                        "/tutor/teaching-profile", json=invalid_payload
+                    ).status_code,
+                    400,
+                )
 
     def test_rejects_invalid_day_and_times(self):
         self.create_user()

@@ -3,7 +3,7 @@
 Role-based peer tutoring with tutor discovery, availability, private subject resources, source-grounded quiz drafts, session requests, messaging, and optional browser-based video calls.
 Stack: Python + Flask, SQLite (built into Python), hashed passwords (Werkzeug), signed httpOnly session cookie, and a plain HTML/CSS/JS frontend.
 
-Tutors can add subjects from the shared subject list or enter a new subject, and remove subjects from their profile. A tutor must keep at least one subject.
+Tutors add a subject and one weekly availability slot together using a single save action in Tutor Workspace. Existing subjects can be selected to add additional slots; subjects and slots can still be removed or edited separately. A tutor must keep at least one subject.
 
 ## Run locally
 
@@ -136,6 +136,7 @@ The app sends notifications for new messages and session request creation or sta
 | GET | `/tutor/rate` | Returns whether the logged-in tutor offers free sessions or their hourly rate |
 | PUT | `/tutor/rate` | Saves `{ "is_free": true }` or `{ "is_free": false, "rate_per_hour": 25 }` |
 | GET | `/tutor/availability` | Lists the logged-in tutor's weekly slots by day and start time |
+| POST | `/tutor/teaching-profile` | Atomically adds a tutor subject and a weekly availability slot |
 | POST | `/tutor/availability` | Adds a weekly slot; overlapping slots on the same day are rejected |
 | PUT | `/tutor/availability` | Edits a slot using `{ "slot_id": 1, "day": "Monday", "start_time": "09:00", "end_time": "10:00" }` |
 | DELETE | `/tutor/availability` | Removes a slot using `{ "slot_id": 1 }` |

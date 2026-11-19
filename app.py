@@ -871,6 +871,58 @@ def tutor_availability():
     return jsonify(availability=[dict(slot) for slot in slots])
 
 
+@app.post("/tutor/teaching-profile")
+def add_tutor_teaching_profile():
+    uid, error = require_tutor()
+    if error:
+        return error
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return fail(400, "Teaching profile must be a JSON object")
+    subject_name = data.get("subject_name")
+    if not isinstance(subject_name, str) or not subject_name.strip():
+        return fail(400, "Subject name is required")
+    subject_name = subject_name.strip()
+    if len(subject_name) > 100:
+        return fail(400, "Subject name must be 100 characters or fewer")
+    parsed, error = parse_availability(data)
+    if error:
+        return fail(400, error)
+    day, start_time, end_time = parsed
+
+    conn = get_db()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        if has_availability_overlap(conn, uid, day, start_time, end_time):
+            conn.rollback()
+            return fail(409, "This time overlaps another slot on that day")
+        subject = conn.execute(
+            "SELECT id FROM subjects WHERE subject_name = ? COLLATE NOCASE",
+            (subject_name,),
+        ).fetchone()
+        if subject:
+            subject_id = subject["id"]
+        else:
+            subject_id = conn.execute(
+                "INSERT INTO subjects (subject_name) VALUES (?)",
+                (subject_name,),
+            ).lastrowid
+        conn.execute(
+            """INSERT OR IGNORE INTO tutor_subjects (tutor_id, subject_id)
+               VALUES (?, ?)""",
+            (uid, subject_id),
+        )
+        conn.execute(
+            """INSERT INTO availability (tutor_id, day, start_time, end_time)
+               VALUES (?, ?, ?, ?)""",
+            (uid, day, start_time, end_time),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return jsonify(message="Subject and availability saved"), 201
+
+
 @app.post("/tutor/availability")
 def add_tutor_availability():
     uid, error = require_tutor()

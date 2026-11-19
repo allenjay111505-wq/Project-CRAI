@@ -901,17 +901,14 @@ body.modal-open{overflow:hidden}
         </div>
         <h3>Subjects I teach</h3>
         <ul id="tutorSubjectList" class="subject-list"></ul>
-        <form id="tutorSubjectForm" class="subject-form">
-          <label for="tutorSubjectName">Add a subject
-            <input id="tutorSubjectName" list="tutorSubjectOptions" maxlength="100" autocomplete="off">
-            <datalist id="tutorSubjectOptions"></datalist>
-          </label>
-          <button>Add subject</button>
-        </form>
         <div class="err" id="tutorSubjectErr" role="alert"></div>
-        <h3>Weekly availability</h3>
+        <h3>Add a subject and availability</h3>
         <ul id="availabilityList" class="availability-list"></ul>
         <form id="availabilityForm" class="availability-form">
+          <label for="tutorSubjectName">Subject
+            <input id="tutorSubjectName" list="tutorSubjectOptions" maxlength="100" autocomplete="off" required>
+            <datalist id="tutorSubjectOptions"></datalist>
+          </label>
           <label for="availabilityDay">Day
             <select id="availabilityDay" required>
               <option value="">Select a day</option>
@@ -926,10 +923,11 @@ body.modal-open{overflow:hidden}
             <input id="availabilityEnd" type="time" required>
           </label>
           <div>
-            <button id="availabilitySave">Add time slot</button>
+            <button id="availabilitySave">Save subject and availability</button>
             <button type="button" id="availabilityCancel" class="ghost hide">Cancel</button>
           </div>
         </form>
+        <p class="sub">Choose a subject, day, and time, then save them together. To add another availability slot, choose one of your existing subjects.</p>
         <div class="err" id="availabilityErr" role="alert"></div>
         <h3>Session rate</h3>
         <p id="rateSummary" class="sub"></p>
@@ -1226,48 +1224,49 @@ body.modal-open{overflow:hidden}
           </section>
         </div>
 
-        <div id="learningMaterialsDialog" class="public-profile-overlay learning-materials-overlay hide" role="presentation">
-          <section class="public-profile-modal" role="dialog" aria-modal="true" aria-labelledby="learningMaterialsTitle">
-            <header class="public-profile-modal-header">
-              <div>
-                <p class="messages-kicker">C.R.A.I. · Learning resources</p>
-                <h1 id="learningMaterialsTitle">My learning materials</h1>
-                <p id="learningMaterialsDescription">Browse PDFs shared by this tutor, grouped by subject.</p>
-              </div>
-              <button id="closeLearningMaterials" class="ghost public-profile-close" type="button" aria-label="Close learning materials">×</button>
-            </header>
-            <section id="tutorMaterialsManager" class="hide" aria-label="Manage learning materials">
-              <p class="sub">Upload notes and handouts for subjects you teach. Files are private until you choose to make them available.</p>
-              <form id="resourceUploadForm" class="resource-form">
-                <label for="resourceTitle">Title
-                  <input id="resourceTitle" maxlength="120" required>
-                </label>
-                <label for="resourceSubject">Subject
-                  <select id="resourceSubject" required></select>
-                </label>
-                <label for="resourceFile">File <span class="muted">(TXT, Markdown, PDF, DOCX; up to 5 MB)</span>
-                  <input id="resourceFile" type="file" accept=".txt,.md,.pdf,.docx" required>
-                </label>
-                <label for="resourceDescription">Description
-                  <textarea id="resourceDescription" maxlength="2000" rows="2"></textarea>
-                </label>
-                <label class="resource-publish-option" for="resourcePublish">
-                  <input id="resourcePublish" type="checkbox">
-                  Make available to learners
-                </label>
-                <button id="resourceUploadButton">Upload resource</button>
-              </form>
-              <p id="tutorResourceStatus" class="resource-status" role="status"></p>
-              <div id="tutorResourceList" class="resource-list"></div>
-            </section>
-            <section id="publicTutorMaterials" class="hide" aria-label="Published tutor PDFs">
-              <p id="publicTutorMaterialsStatus" class="resource-status" role="status"></p>
-              <div id="publicTutorMaterialsList" class="resource-list"></div>
-            </section>
-          </section>
-        </div>
       </div>
     </div>
+  </section>
+</div>
+
+<div id="learningMaterialsDialog" class="public-profile-overlay learning-materials-overlay hide" role="presentation">
+  <section class="public-profile-modal" role="dialog" aria-modal="true" aria-labelledby="learningMaterialsTitle">
+    <header class="public-profile-modal-header">
+      <div>
+        <p class="messages-kicker">C.R.A.I. · Learning resources</p>
+        <h1 id="learningMaterialsTitle">My learning materials</h1>
+        <p id="learningMaterialsDescription">Browse PDFs shared by this tutor, grouped by subject.</p>
+      </div>
+      <button id="closeLearningMaterials" class="ghost public-profile-close" type="button" aria-label="Close learning materials">×</button>
+    </header>
+    <section id="tutorMaterialsManager" class="hide" aria-label="Manage learning materials">
+      <p class="sub">Upload notes and handouts for subjects you teach. Files are private until you choose to make them available.</p>
+      <form id="resourceUploadForm" class="resource-form">
+        <label for="resourceTitle">Title
+          <input id="resourceTitle" maxlength="120" required>
+        </label>
+        <label for="resourceSubject">Subject
+          <select id="resourceSubject" required></select>
+        </label>
+        <label for="resourceFile">File <span class="muted">(TXT, Markdown, PDF, DOCX; up to 5 MB)</span>
+          <input id="resourceFile" type="file" accept=".txt,.md,.pdf,.docx" required>
+        </label>
+        <label for="resourceDescription">Description
+          <textarea id="resourceDescription" maxlength="2000" rows="2"></textarea>
+        </label>
+        <label class="resource-publish-option" for="resourcePublish">
+          <input id="resourcePublish" type="checkbox">
+          Make available to learners
+        </label>
+        <button id="resourceUploadButton">Upload resource</button>
+      </form>
+      <p id="tutorResourceStatus" class="resource-status" role="status"></p>
+      <div id="tutorResourceList" class="resource-list"></div>
+    </section>
+    <section id="publicTutorMaterials" class="hide" aria-label="Published tutor PDFs">
+      <p id="publicTutorMaterialsStatus" class="resource-status" role="status"></p>
+      <div id="publicTutorMaterialsList" class="resource-list"></div>
+    </section>
   </section>
 </div>
 
@@ -2888,19 +2887,6 @@ $('resourceUploadForm').onsubmit = async event => {
   }
 };
 
-$('tutorSubjectForm').onsubmit = async e => {
-  e.preventDefault();
-  const subject_name = $('tutorSubjectName').value.trim();
-  $('tutorSubjectErr').textContent = '';
-  if (!subject_name) { $('tutorSubjectErr').textContent = 'Enter a subject name'; return; }
-  const { ok, data } = await api('/tutor/subjects', { subject_name });
-  if (ok) {
-    $('tutorSubjectForm').reset();
-    await refreshTutorSubjects();
-  }
-  else $('tutorSubjectErr').textContent = data.error || 'Could not add subject';
-};
-
 function nextDateForSlot(day, time) {
   const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const [hours, minutes] = time.split(':').map(Number);
@@ -3889,7 +3875,9 @@ $('messageForm').onsubmit = async event => {
 function resetAvailabilityForm() {
   editingAvailabilityId = null;
   $('availabilityForm').reset();
-  $('availabilitySave').textContent = 'Add slot';
+  $('tutorSubjectName').required = true;
+  $('tutorSubjectName').disabled = false;
+  $('availabilitySave').textContent = 'Save subject and availability';
   $('availabilityCancel').classList.add('hide');
   $('availabilityErr').textContent = '';
 }
@@ -3909,10 +3897,13 @@ function renderAvailability(slots) {
     edit.textContent = 'Edit';
     edit.onclick = () => {
       editingAvailabilityId = slot.id;
+      $('tutorSubjectName').value = '';
+      $('tutorSubjectName').required = false;
+      $('tutorSubjectName').disabled = true;
       $('availabilityDay').value = slot.day;
       $('availabilityStart').value = slot.start_time;
       $('availabilityEnd').value = slot.end_time;
-      $('availabilitySave').textContent = 'Save changes';
+      $('availabilitySave').textContent = 'Save availability';
       $('availabilityCancel').classList.remove('hide');
       $('availabilityErr').textContent = '';
     };
@@ -3936,16 +3927,25 @@ $('availabilityForm').onsubmit = async e => {
   e.preventDefault();
   $('availabilityErr').textContent = '';
   const body = {
+    subject_name: $('tutorSubjectName').value.trim(),
     day: $('availabilityDay').value,
     start_time: $('availabilityStart').value,
     end_time: $('availabilityEnd').value
   };
+  if (editingAvailabilityId === null && !body.subject_name) {
+    $('availabilityErr').textContent = 'Enter or choose a subject.';
+    return;
+  }
   const url = editingAvailabilityId === null
-    ? '/tutor/availability'
+    ? '/tutor/teaching-profile'
     : `/tutor/availability/${editingAvailabilityId}`;
   const method = editingAvailabilityId === null ? 'POST' : 'PUT';
   const { ok, data } = await api(url, body, method);
-  if (ok) { resetAvailabilityForm(); await refreshTutorAvailability(); }
+  if (ok) {
+    resetAvailabilityForm();
+    if (method === 'POST') await refreshTutorSubjects();
+    await refreshTutorAvailability();
+  }
   else $('availabilityErr').textContent = data.error || 'Could not save availability';
 };
 
