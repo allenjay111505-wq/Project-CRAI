@@ -3,7 +3,7 @@
 Role-based peer tutoring with tutor discovery, availability, private subject resources, source-grounded quiz drafts, session requests, messaging, and optional browser-based video calls.
 Stack: Python + Flask, SQLite (built into Python), hashed passwords (Werkzeug), signed httpOnly session cookie, and a plain HTML/CSS/JS frontend.
 
-Tutors add a subject and one weekly availability slot together using a single save action in Tutor Workspace. Existing subjects can be selected to add additional slots; subjects and slots can still be removed or edited separately. A tutor must keep at least one subject.
+Tutors manage subjects and their weekly availability together in one Tutor Workspace list. Adding a subject and its first availability slot uses one save action; existing subjects can be selected to add more slots. Subjects and slots can still be removed or edited separately. A tutor must keep at least one subject.
 
 ## Run locally
 
@@ -23,7 +23,7 @@ New resource, quiz, assignment, attempt, and focus-indicator tables are created 
 
 Tutors manage their own weekly availability. Learners search by tutor name and/or subject, then view availability on the tutor profile and propose a time within a published slot. The server validates the selected slot; a request does not reserve or modify it. Availability has no separate tutor-timezone setting, so schedule matching assumes tutor and learner use the same local timezone.
 
-At the bottom of the tutor’s **My Profile** page, a subject-per-row table shows each subject, available days and times, and a **My learning materials** button for that subject. The button opens the subject’s materials and upload/management controls. Public tutor profiles group shared PDFs by subject. Tutor resources accept UTF-8 TXT, Markdown, PDF, and DOCX uploads up to 5 MB. Files are stored outside `public/`, use generated storage names, and are served only through permission-checked download routes. Quiz generation currently extracts readable text from TXT, Markdown, and DOCX; PDF files remain downloadable but are not supported as generation sources.
+At the bottom of the tutor’s **My Profile** page, a subject-per-row table shows each subject, its available days and times, and a **My learning materials** button for that subject. The button opens the subject’s materials and upload/management controls. Public tutor profiles group shared PDFs by subject. Tutor resources accept UTF-8 TXT, Markdown, PDF, and DOCX uploads up to 5 MB. Files are stored outside `public/`, use generated storage names, and are served only through permission-checked download routes. Quiz generation currently extracts readable text from TXT, Markdown, and DOCX; PDF files remain downloadable but are not supported as generation sources.
 
 Sample logins after seeding (password `password123`): `ana@example.com` (tutor), `ben@example.com` (learner), `cara@example.com` (both).
 

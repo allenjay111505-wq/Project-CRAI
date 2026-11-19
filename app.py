@@ -264,7 +264,7 @@ def public_tutor_profile(tutor_id):
         (tutor_id,),
     ).fetchall()
     availability = conn.execute(
-        """SELECT id, day, start_time, end_time FROM availability
+        """SELECT id, subject_id, day, start_time, end_time FROM availability
            WHERE tutor_id = ?
            ORDER BY CASE day
                WHEN 'Monday' THEN 1 WHEN 'Tuesday' THEN 2
@@ -774,6 +774,11 @@ def update_tutor_subject():
                    WHERE tutor_id = ? AND subject_id = ?""",
                 (replacement_id, uid, subject_id),
             )
+            conn.execute(
+                """UPDATE availability SET subject_id = ?
+                   WHERE tutor_id = ? AND subject_id = ?""",
+                (replacement_id, uid, subject_id),
+            )
         conn.commit()
     finally:
         conn.close()
@@ -813,6 +818,11 @@ def remove_tutor_subject(subject_id=None):
             return fail(400, "Tutors must have at least one subject")
         conn.execute(
             "DELETE FROM tutor_subjects WHERE tutor_id = ? AND subject_id = ?",
+            (uid, subject_id),
+        )
+        conn.execute(
+            """UPDATE availability SET subject_id = NULL
+               WHERE tutor_id = ? AND subject_id = ?""",
             (uid, subject_id),
         )
         conn.commit()
@@ -858,8 +868,11 @@ def tutor_availability():
         return error
     conn = get_db()
     slots = conn.execute(
-        """SELECT id, day, start_time, end_time FROM availability
-           WHERE tutor_id = ?
+        """SELECT availability.id, availability.subject_id, subjects.subject_name,
+                  availability.day, availability.start_time, availability.end_time
+           FROM availability
+           LEFT JOIN subjects ON subjects.id = availability.subject_id
+           WHERE availability.tutor_id = ?
            ORDER BY CASE day
                WHEN 'Monday' THEN 1 WHEN 'Tuesday' THEN 2
                WHEN 'Wednesday' THEN 3 WHEN 'Thursday' THEN 4
@@ -913,9 +926,10 @@ def add_tutor_teaching_profile():
             (uid, subject_id),
         )
         conn.execute(
-            """INSERT INTO availability (tutor_id, day, start_time, end_time)
-               VALUES (?, ?, ?, ?)""",
-            (uid, day, start_time, end_time),
+            """INSERT INTO availability
+               (tutor_id, subject_id, day, start_time, end_time)
+               VALUES (?, ?, ?, ?, ?)""",
+            (uid, subject_id, day, start_time, end_time),
         )
         conn.commit()
     finally:
@@ -970,7 +984,7 @@ def update_tutor_availability(slot_id=None):
     try:
         conn.execute("BEGIN IMMEDIATE")
         slot = conn.execute(
-            "SELECT 1 FROM availability WHERE id = ? AND tutor_id = ?",
+            "SELECT subject_id FROM availability WHERE id = ? AND tutor_id = ?",
             (slot_id, uid),
         ).fetchone()
         if not slot:
@@ -979,10 +993,29 @@ def update_tutor_availability(slot_id=None):
         if has_availability_overlap(conn, uid, day, start_time, end_time, slot_id):
             conn.rollback()
             return fail(409, "This time overlaps another slot on that day")
+        subject_id = slot["subject_id"]
+        if "subject_id" in data:
+            subject_id = data["subject_id"]
+            if (
+                isinstance(subject_id, bool)
+                or not isinstance(subject_id, int)
+                or subject_id < 1
+            ):
+                conn.rollback()
+                return fail(400, "A valid subject_id is required")
+            assignment = conn.execute(
+                """SELECT 1 FROM tutor_subjects
+                   WHERE tutor_id = ? AND subject_id = ?""",
+                (uid, subject_id),
+            ).fetchone()
+            if not assignment:
+                conn.rollback()
+                return fail(400, "Choose a subject from your teaching profile")
         conn.execute(
-            """UPDATE availability SET day = ?, start_time = ?, end_time = ?
+            """UPDATE availability
+               SET subject_id = ?, day = ?, start_time = ?, end_time = ?
                WHERE id = ? AND tutor_id = ?""",
-            (day, start_time, end_time, slot_id, uid),
+            (subject_id, day, start_time, end_time, slot_id, uid),
         )
         conn.commit()
     finally:

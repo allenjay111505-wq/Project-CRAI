@@ -32,5 +32,26 @@ def init_db():
         conn.execute(
             "ALTER TABLE users ADD COLUMN sms_notifications_enabled INTEGER NOT NULL DEFAULT 0"
         )
+    availability_columns = {
+        row["name"] for row in conn.execute("PRAGMA table_info(availability)").fetchall()
+    }
+    if "subject_id" not in availability_columns:
+        conn.execute(
+            """ALTER TABLE availability ADD COLUMN subject_id INTEGER
+               REFERENCES subjects(id) ON DELETE SET NULL"""
+        )
+        conn.execute(
+            """UPDATE availability
+               SET subject_id = (
+                   SELECT MIN(tutor_subjects.subject_id)
+                   FROM tutor_subjects
+                   WHERE tutor_subjects.tutor_id = availability.tutor_id
+               )
+               WHERE (
+                   SELECT COUNT(*)
+                   FROM tutor_subjects
+                   WHERE tutor_subjects.tutor_id = availability.tutor_id
+               ) = 1"""
+        )
     conn.commit()
     conn.close()

@@ -134,6 +134,7 @@ class TutorAvailabilityTestCase(unittest.TestCase):
             [(slot["day"], slot["start_time"], slot["end_time"]) for slot in slots],
             [("Monday", "09:00", "10:00")],
         )
+        self.assertEqual(slots[0]["subject_id"], subjects[0]["id"])
 
         duplicate_subject = self.add_teaching_profile(
             "biology", "Tuesday", "09:00", "10:00"
@@ -142,6 +143,10 @@ class TutorAvailabilityTestCase(unittest.TestCase):
         self.assertEqual(
             len(self.client.get("/tutor/subjects").get_json()["subjects"]), 1
         )
+        tuesday_slot = self.client.get("/tutor/availability").get_json()[
+            "availability"
+        ][1]
+        self.assertEqual(tuesday_slot["subject_id"], subjects[0]["id"])
 
     def test_combined_subject_and_availability_save_is_atomic(self):
         self.create_user()
@@ -191,6 +196,39 @@ class TutorAvailabilityTestCase(unittest.TestCase):
                     ).status_code,
                     400,
                 )
+
+    def test_editing_availability_preserves_and_validates_subject_assignment(self):
+        self.create_user()
+        self.assertEqual(
+            self.add_teaching_profile("Biology", "Monday", "09:00", "10:00").status_code,
+            201,
+        )
+        subjects = self.client.get("/tutor/subjects").get_json()["subjects"]
+        slot = self.client.get("/tutor/availability").get_json()["availability"][0]
+        update = self.client.put(
+            f"/tutor/availability/{slot['id']}",
+            json={
+                "subject_id": subjects[0]["id"],
+                "day": "Tuesday",
+                "start_time": "10:00",
+                "end_time": "11:00",
+            },
+        )
+        self.assertEqual(update.status_code, 200)
+        changed = self.client.get("/tutor/availability").get_json()["availability"][0]
+        self.assertEqual(changed["subject_id"], subjects[0]["id"])
+        self.assertEqual(changed["subject_name"], "Biology")
+
+        invalid_assignment = self.client.put(
+            f"/tutor/availability/{slot['id']}",
+            json={
+                "subject_id": 9999,
+                "day": "Tuesday",
+                "start_time": "10:00",
+                "end_time": "11:00",
+            },
+        )
+        self.assertEqual(invalid_assignment.status_code, 400)
 
     def test_rejects_invalid_day_and_times(self):
         self.create_user()
