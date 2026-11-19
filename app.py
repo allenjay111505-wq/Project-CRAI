@@ -175,6 +175,16 @@ def public_tutor_profile_page(tutor_id):
     return app.send_static_file("index.html")
 
 
+@app.get("/tutors/<int:tutor_id>/profile")
+def full_tutor_profile_page(tutor_id):
+    return app.send_static_file("index.html")
+
+
+@app.get("/sessions/<int:request_id>")
+def tutoring_session_page(request_id):
+    return app.send_static_file("index.html")
+
+
 @app.get("/tutors/search")
 @app.get("/api/tutors")
 def search_tutors():
@@ -256,7 +266,7 @@ def public_tutor_profile(tutor_id):
         conn.close()
         return fail(404, "Tutor profile not found")
     subjects = conn.execute(
-        """SELECT subjects.subject_name
+        """SELECT subjects.id, subjects.subject_name
            FROM tutor_subjects
            JOIN subjects ON subjects.id = tutor_subjects.subject_id
            WHERE tutor_subjects.tutor_id = ?
@@ -276,6 +286,7 @@ def public_tutor_profile(tutor_id):
     profile = dict(tutor)
     profile["has_profile_photo"] = profile.pop("profile_photo") is not None
     profile["subjects"] = [row["subject_name"] for row in subjects]
+    profile["subject_options"] = [dict(row) for row in subjects]
     profile["availability"] = [dict(slot) for slot in availability]
     profile.update(tutor_rate_data(conn, tutor_id))
     conn.close()
@@ -295,7 +306,7 @@ def register():
         return fail(400, "Invalid email format")
     if len(str(d["password"])) < 8:
         return fail(400, "Password must be at least 8 characters")
-    if d["role"] not in ("tutor", "learner", "both"):
+    if d["role"] not in ("tutor", "learner"):
         return fail(400, "Invalid role")
     try:
         year = int(d["year_level"])

@@ -59,6 +59,8 @@ button.ghost{
   border-color:var(--line);
 }
 button.ghost:hover{color:var(--navy);background:#f4f7fc;border-color:#aebed2}
+.session-room-profile-link{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:8px 14px;border:1px solid var(--line);border-radius:10px;color:var(--blue);background:#fff;font-weight:750;text-decoration:none}
+.session-room-profile-link:hover{color:var(--navy);background:#f4f7fc;border-color:#aebed2}
 .hide{display:none!important}
 #messageTutorStatus:empty{display:none}
 h1,h2,h3,p{margin-top:0}
@@ -301,6 +303,23 @@ input[type="checkbox"]{width:18px;min-height:18px;accent-color:var(--blue)}
 .request-heading h1{margin-bottom:5px}
 .request-heading p{margin:0;color:var(--muted)}
 .request-list{display:grid;gap:12px}
+.request-group{margin-top:22px}
+.request-group>h2{margin:0 0 10px;color:var(--navy)}
+.tutor-calendar-toolbar{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:12px}
+.tutor-calendar-toolbar h2{margin:0;color:var(--navy)}
+.tutor-calendar-toolbar .resource-status{margin:5px 0 0}
+.tutor-calendar-scroll{overflow-x:auto;padding-bottom:5px}
+.tutor-calendar-weekdays,.tutor-calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(100px,1fr));min-width:700px}
+.tutor-calendar-weekdays{border:1px solid #dce5f0;border-bottom:0;border-radius:12px 12px 0 0;background:#f5f8fc}
+.tutor-calendar-weekdays span{padding:10px;text-align:center;color:var(--navy);font-size:.8rem;font-weight:800}
+.tutor-calendar-grid{border-top:1px solid #dce5f0;border-left:1px solid #dce5f0}
+.tutor-calendar-day{min-height:122px;padding:8px;border-right:1px solid #dce5f0;border-bottom:1px solid #dce5f0;background:#fff}
+.tutor-calendar-day.calendar-empty{background:#f8fafc}
+.tutor-calendar-day.other-month{background:#f8fafc;color:#94a3b8}
+.tutor-calendar-date{margin-bottom:7px;color:var(--navy);font-size:.82rem;font-weight:800}
+.tutor-calendar-event{display:block;width:100%;min-height:0;margin:4px 0;padding:6px 7px;border:0;border-radius:7px;color:#174e37;background:#e9f7ef;box-shadow:none;text-align:left;font-size:.7rem;line-height:1.35;white-space:normal}
+.tutor-calendar-event:hover{background:#d8f0e2;box-shadow:none;transform:none}
+.tutor-calendar-available{margin:4px 0;padding:6px 7px;border-radius:7px;color:#315b8c;background:#edf4fc;font-size:.7rem;line-height:1.35}
 .request-card{padding:18px 20px;border:1px solid var(--line);border-radius:16px;background:linear-gradient(150deg,#fff,#f9fbff);box-shadow:0 8px 20px rgba(16,45,86,.045)}
 .request-card-header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
 .request-card h2{margin:0 0 5px;color:var(--navy)}
@@ -433,10 +452,37 @@ input[type="checkbox"]{width:18px;min-height:18px;accent-color:var(--blue)}
 .quiz-choice{display:flex;align-items:flex-start;gap:9px;margin:8px 0}
 .quiz-choice input{width:auto;margin-top:4px}
 .quiz-dialog-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:16px}
+.session-quiz-run{margin:12px 0;padding:16px;border:1px solid #dfe8f3;border-radius:14px;background:linear-gradient(135deg,#fff,#f7faff)}
+.session-quiz-run h3{margin:0 0 6px;color:var(--navy)}
+.session-quiz-run p{margin:6px 0;color:var(--muted)}
+.session-quiz-ready-options{display:grid;gap:8px;margin:12px 0}
+.session-quiz-ready-options label{display:flex;align-items:flex-start;gap:9px;margin:0;color:#455970;font-size:.87rem}
+.session-quiz-ready-options input{width:auto;min-height:0;margin-top:4px}
+.session-quiz-builder{margin-top:18px;padding:18px;border:1px solid #dfe8f3;border-radius:16px;background:linear-gradient(145deg,#f8fbff,#fff)}
+.session-quiz-builder h3{margin:0 0 6px;color:var(--navy)}
+.session-quiz-upload-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}
+.session-quiz-upload-form label{margin:0}
+.session-quiz-upload-form label:first-child,.session-quiz-upload-form label:nth-child(2),.session-quiz-upload-form label:nth-child(3),.session-quiz-upload-form .consent-option,.session-quiz-upload-form button{grid-column:1/-1}
+.session-quiz-upload-form .consent-option{display:flex;align-items:flex-start;gap:9px;color:#455970;font-size:.86rem}
+.session-quiz-upload-form .consent-option input{width:auto;min-height:0;margin-top:4px}
+.session-quiz-focus-alert{padding:12px 14px;border:1px solid #edc574;border-radius:12px;color:#70470a;background:#fff7e6}
+.session-quiz-shared-result{padding:12px 14px;border:1px solid #b9dfc8;border-radius:12px;color:#23643e;background:#effaf3}
 .quiz-focus-notice{padding:13px;border:1px solid #e9d79e;border-radius:12px;background:#fffaf0;color:#59420d}
 .video-call-dialog{width:min(980px,100%);padding:clamp(18px,3vw,30px);border:1px solid #e4e9f1;border-radius:20px;background:#fff;box-shadow:0 24px 70px rgba(8,27,51,.24)}
 .video-call-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:16px 0}
 .video-call-grid video{width:100%;min-height:180px;max-height:55vh;border-radius:14px;background:#101b2a;object-fit:cover}
+.session-quiz-overlay{z-index:40;padding-right:min(360px,25vw)}
+#videoCallDialog.session-call-dock{z-index:55;inset:auto 16px 16px auto;display:block;overflow:visible;padding:0;background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;pointer-events:none}
+#videoCallDialog.session-call-dock .video-call-dialog{width:330px;padding:11px;border-radius:16px;pointer-events:auto}
+#videoCallDialog.session-call-dock .quiz-focus-notice,#videoCallDialog.session-call-dock #videoCallStatus{display:none}
+#videoCallDialog.session-call-dock .quiz-dialog-header{padding-bottom:6px}
+#videoCallDialog.session-call-dock .quiz-dialog-header h2{margin:0;font-size:.9rem}
+#videoCallDialog.session-call-dock .quiz-dialog-header .messages-kicker{margin:0;font-size:.62rem}
+#videoCallDialog.session-call-dock #videoCallMinimize,#videoCallDialog.session-call-dock #videoCallClose{min-height:28px;padding:4px 7px;font-size:.64rem}
+#videoCallDialog.session-call-dock .video-call-grid{gap:6px;margin:7px 0}
+#videoCallDialog.session-call-dock .video-call-grid video{min-height:86px;max-height:120px;border-radius:9px}
+#videoCallDialog.session-call-dock .quiz-dialog-actions{gap:5px;margin-top:7px}
+#videoCallDialog.session-call-dock .quiz-dialog-actions button{min-height:32px;padding:5px 8px;font-size:.7rem}
 .profile-list li{padding:10px 0;border-bottom:1px solid var(--line)}
 .tutor-results{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;margin-top:16px}
 .tutor-result{padding:17px;border:1px solid var(--line);border-radius:14px;background:linear-gradient(150deg,#fff,#f9fbff);transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
@@ -469,6 +515,7 @@ input[type="checkbox"]{width:18px;min-height:18px;accent-color:var(--blue)}
 .empty-state{padding:24px 16px;border:1px dashed #c8d4e3;border-radius:13px;color:var(--muted);text-align:center;background:#f9fbfe}
 .empty-state strong{display:block;margin-bottom:4px;color:var(--ink)}
 .public-profile-overlay{position:fixed;inset:0;z-index:20;display:grid;place-items:center;overflow-y:auto;padding:28px;background:rgba(12,24,42,.58);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}
+.session-request-confirm-overlay{z-index:40}
 .public-profile-modal{position:relative;width:min(940px,100%);max-height:calc(100vh - 56px);overflow-y:auto;padding:clamp(20px,3vw,32px);border:1px solid rgba(255,255,255,.7);border-radius:24px;background:linear-gradient(155deg,#fff 0%,#fff 72%,#f8faff 100%);box-shadow:0 28px 90px rgba(3,14,30,.3)}
 .public-profile-modal-header{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:20px}
 .public-profile-modal-header h1{margin:0 0 5px;color:var(--navy)}
@@ -487,7 +534,33 @@ input[type="checkbox"]{width:18px;min-height:18px;accent-color:var(--blue)}
 .public-tutor-profile-table{width:100%;border-collapse:collapse}
 .public-tutor-profile-table th,.public-tutor-profile-table td{padding:12px 10px;border-top:1px solid #e8edf4;text-align:left;vertical-align:top}
 .public-tutor-profile-table th{width:150px;color:var(--navy);font-size:.9rem}
-.public-tutor-profile-table .profile-list{display:grid;gap:5px}
+.public-tutor-profile-table .profile-list{display:flex;gap:8px;flex-wrap:wrap}
+.public-tutor-profile-table .profile-list li{padding:7px 11px;border:1px solid #e1eaf5;border-radius:99px;background:#f6f9fd;font-size:.9rem}
+.public-tutor-contact-actions{display:flex;gap:10px;flex-wrap:wrap}
+.full-tutor-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;margin-bottom:20px}
+.full-tutor-heading h1{margin:0 0 6px;color:var(--navy)}
+.full-tutor-heading p:last-child{margin:0;color:var(--muted)}
+.full-tutor-hero{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:20px;padding:24px;margin-bottom:18px;border:1px solid #dfe8f3;border-radius:20px;background:linear-gradient(120deg,#fff,#f3f7fd)}
+.full-tutor-hero .profile-avatar{width:104px;height:104px;margin:0}
+.full-tutor-hero h2{margin:0 0 5px;color:var(--navy)}
+.full-tutor-hero p{margin:0;color:var(--muted)}
+.full-tutor-subjects{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.full-tutor-subjects span{padding:6px 10px;border:1px solid #dce9f7;border-radius:99px;color:#285b99;background:#f0f6fd;font-size:.82rem;font-weight:700}
+.full-tutor-info-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:24px}
+.full-tutor-info-grid .card{margin:0}
+.full-tutor-info-grid h3,.full-tutor-materials-heading h2{margin:0 0 12px;color:var(--navy)}
+.full-tutor-info-grid ul{margin:0;padding-left:20px;color:#52647a;columns:2}
+.full-tutor-materials-heading{display:flex;justify-content:space-between;align-items:end;gap:12px;margin:24px 0 14px}
+.full-tutor-materials-heading h2{margin:0 0 4px}
+.full-tutor-materials-heading p{margin:0;color:var(--muted)}
+.full-tutor-material-subject{margin:16px 0 0;padding:18px;border:1px solid #dfe8f3;border-radius:16px;background:#fff}
+.full-tutor-material-subject h3{margin:0 0 10px;color:var(--navy)}
+.full-tutor-materials-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
+.full-tutor-material{padding:14px;border:1px solid #e5ebf3;border-radius:12px;background:#f9fbfe}
+.full-tutor-material h4{margin:0 0 5px;color:#1c3c69}
+.full-tutor-material p{margin:5px 0;color:var(--muted);font-size:.88rem}
+.full-tutor-material a{display:inline-flex;margin-top:8px;font-size:.86rem;font-weight:750}
+.full-tutor-empty{padding:18px;border:1px dashed #c8d4e3;border-radius:13px;color:var(--muted);background:#f9fbfe}
 .learning-materials-overlay{z-index:24}
 .public-tutor-contact{margin-top:18px;padding-top:18px;border-top:1px solid #e8edf4}
 .public-tutor-contact .public-message-actions{gap:9px}
@@ -600,6 +673,19 @@ body.modal-open{overflow:hidden}
   .learner-profile-modal{max-height:calc(100vh - 24px);padding:18px;border-radius:18px}
   .learner-profile-details{grid-template-columns:1fr}
   .public-tutor-details .card{padding:17px}
+  .session-quiz-upload-form{grid-template-columns:1fr}
+  .session-quiz-upload-form label,.session-quiz-upload-form label:first-child,.session-quiz-upload-form label:nth-child(2),.session-quiz-upload-form label:nth-child(3),.session-quiz-upload-form .consent-option,.session-quiz-upload-form button{grid-column:1}
+  .session-quiz-overlay{padding-right:12px;padding-bottom:166px}
+  #videoCallDialog.session-call-dock{inset:auto 10px 10px auto}
+  #videoCallDialog.session-call-dock .video-call-dialog{width:min(260px,calc(100vw - 20px))}
+  .full-tutor-heading{align-items:flex-start;flex-direction:column}
+  .full-tutor-heading button{width:100%}
+  .full-tutor-hero{grid-template-columns:auto minmax(0,1fr);padding:18px}
+  .full-tutor-hero .profile-avatar{width:76px;height:76px}
+  .full-tutor-hero>button{grid-column:1/-1;width:100%}
+  .full-tutor-info-grid{grid-template-columns:1fr}
+  .full-tutor-info-grid ul{columns:1}
+  .full-tutor-materials-heading{align-items:flex-start;flex-direction:column}
   .rail-card{padding:17px}
   .request-heading{align-items:flex-start;flex-direction:column}
   .request-refresh{width:100%;flex-wrap:wrap}
@@ -712,7 +798,7 @@ body.modal-open{overflow:hidden}
         <input id="rPass2" type="password" autocomplete="new-password" placeholder="Enter your password again">
         <div class="err" data-for="rPass2"></div>
         <label for="rRole">I want to join as</label>
-        <select id="rRole"><option value="">Select a role</option><option value="tutor">Tutor</option><option value="learner">Learner</option><option value="both">Both</option></select>
+        <select id="rRole"><option value="">Select a role</option><option value="tutor">Tutor</option><option value="learner">Learner</option></select>
         <div class="err" data-for="rRole"></div>
         <div class="err" id="rErr" role="alert"></div>
         <button class="full">Create account</button>
@@ -756,6 +842,9 @@ body.modal-open{overflow:hidden}
       <nav class="sidebar-nav" aria-label="Messages and requests">
         <button class="sidebar-link" id="requestsBtn" type="button">
           <span class="sidebar-icon" aria-hidden="true">◷</span><span>Session requests</span><span id="requestCountBadge" class="unread-badge sidebar-badge hide">0</span>
+        </button>
+        <button class="sidebar-link" id="acceptedSessionsBtn" type="button">
+          <span class="sidebar-icon" aria-hidden="true">✓</span><span>Accepted sessions</span><span id="acceptedSessionsCountBadge" class="unread-badge sidebar-badge hide">0</span>
         </button>
         <button class="sidebar-link" id="inboxBtn" type="button">
           <span class="sidebar-icon" aria-hidden="true">✉</span><span>Inbox</span><span id="inboxUnreadBadge" class="unread-badge sidebar-badge hide">0</span>
@@ -999,16 +1088,45 @@ body.modal-open{overflow:hidden}
         <p id="messageTutorStatus" class="toast" role="status"></p>
         <a id="messageTutorLogin" class="hide" href="/">Log in to message this tutor</a>
         <div id="tutorSearchResults" class="tutor-results"></div>
-        <section class="resource-section" aria-labelledby="learnerResourceHeading">
-          <h3 id="learnerResourceHeading">Learning resources</h3>
-          <p class="sub">Search for a subject to browse resources shared by tutors who teach it.</p>
-          <p id="learnerResourceStatus" class="resource-status" role="status"></p>
-          <div id="learnerResourceList" class="resource-list"></div>
-          <h3>Published quizzes</h3>
-          <p id="learnerQuizStatus" class="resource-status" role="status"></p>
-          <div id="learnerQuizList" class="resource-list"></div>
-        </section>
       </section>
+    </section>
+    <section id="fullTutorProfilePage" class="dashboard-page hide">
+      <header class="full-tutor-heading">
+        <div>
+          <p class="messages-kicker">C.R.A.I. · Tutor profile</p>
+          <h1>Get to know your tutor</h1>
+          <p>Explore their teaching subjects, schedule, rate, and shared learning materials.</p>
+        </div>
+        <button id="fullTutorBack" class="ghost" type="button">Back to tutor search</button>
+      </header>
+      <p id="fullTutorStatus" class="resource-status" role="status">Loading tutor profile…</p>
+      <div id="fullTutorContent" class="hide">
+        <section class="full-tutor-hero">
+          <img id="fullTutorAvatar" class="profile-avatar" src="/default-avatar.svg" alt="Default profile picture">
+          <div>
+            <h2 id="fullTutorName"></h2>
+            <p>Peer tutor · C.R.A.I. tutoring community</p>
+            <div id="fullTutorSubjects" class="full-tutor-subjects"></div>
+          </div>
+          <button id="fullTutorRequest" type="button">Request a session</button>
+        </section>
+        <div class="full-tutor-info-grid">
+          <section class="card dashboard-page-card">
+            <h3>Teaching days</h3>
+            <ul id="fullTutorDays"></ul>
+          </section>
+          <section class="card dashboard-page-card">
+            <h3>Session rate</h3>
+            <p id="fullTutorRate" class="sub"></p>
+          </section>
+        </div>
+        <section aria-labelledby="fullTutorMaterialsTitle">
+          <div class="full-tutor-materials-heading">
+            <div><h2 id="fullTutorMaterialsTitle">Learning materials</h2><p>Browse resources this tutor has shared before your session.</p></div>
+          </div>
+          <div id="fullTutorMaterials"></div>
+        </section>
+      </div>
     </section>
     <section id="messagesView" class="dashboard-page hide">
       <div class="messages-heading">
@@ -1072,10 +1190,190 @@ body.modal-open{overflow:hidden}
         </div>
       </div>
       <p id="sessionRequestsStatus" class="toast" role="status"></p>
-      <div id="sessionRequestList" class="request-list"></div>
+      <section class="request-group" aria-labelledby="pendingRequestsTitle">
+        <h2 id="pendingRequestsTitle">Pending requests</h2>
+        <div id="pendingSessionRequestList" class="request-list"></div>
+      </section>
+      <section class="request-group" aria-labelledby="acceptedRequestsTitle">
+        <h2 id="acceptedRequestsTitle">Accepted requests</h2>
+        <div id="acceptedSessionRequestList" class="request-list"></div>
+      </section>
+      <section id="tutorAcceptedCalendar" class="request-group hide" aria-labelledby="tutorCalendarHeading">
+        <div class="tutor-calendar-toolbar">
+          <div>
+            <h2 id="tutorCalendarHeading">Session calendar</h2>
+            <p id="tutorCalendarStatus" class="resource-status" role="status"></p>
+          </div>
+          <div class="request-refresh">
+            <button id="tutorCalendarPrevious" class="ghost" type="button" aria-label="Previous month">‹</button>
+            <strong id="tutorCalendarMonth"></strong>
+            <button id="tutorCalendarNext" class="ghost" type="button" aria-label="Next month">›</button>
+          </div>
+        </div>
+        <div class="tutor-calendar-scroll">
+          <div class="tutor-calendar-weekdays" aria-hidden="true">
+            <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+          </div>
+          <div id="tutorCalendarGrid" class="tutor-calendar-grid"></div>
+        </div>
+      </section>
+      <section class="request-group" aria-labelledby="pastRequestsTitle">
+        <h2 id="pastRequestsTitle">Past requests</h2>
+        <div id="pastSessionRequestList" class="request-list"></div>
+      </section>
+    </section>
+    <section id="sessionRoomView" class="dashboard-page hide">
+      <div class="request-heading">
+        <div>
+          <p class="messages-kicker">C.R.A.I. · Tutoring session</p>
+          <h1 id="sessionRoomTitle">Session room</h1>
+          <p id="sessionRoomWhen"></p>
+        </div>
+        <div class="request-refresh">
+          <button id="sessionRoomBack" class="ghost" type="button">Back to session requests</button>
+        </div>
+      </div>
+      <p id="sessionRoomStatus" class="toast" role="status" aria-live="polite"></p>
+      <div class="profile-overview">
+        <section class="card dashboard-page-card profile-summary-card">
+          <img id="sessionTutorAvatar" class="profile-avatar" src="/default-avatar.svg" alt="Tutor profile picture">
+          <h2 id="sessionTutorName"></h2>
+          <p id="sessionTutorRate"></p>
+          <p id="sessionTutorSubjects"></p>
+          <a id="sessionTutorProfileLink" class="session-room-profile-link" href="#">View tutor profile</a>
+        </section>
+        <div class="public-tutor-details">
+          <section class="card dashboard-page-card">
+            <h2>Meet here</h2>
+            <p>Join the video call when you are ready. You can open the session quiz while keeping the call connected.</p>
+            <div class="quiz-dialog-actions">
+              <button id="sessionRoomCall" type="button">Join video call</button>
+              <button id="sessionRoomMessage" class="ghost" type="button">Message tutor</button>
+            </div>
+            <p id="sessionRoomCallStatus" class="resource-status" role="status"></p>
+          </section>
+          <section class="card dashboard-page-card">
+            <h2>Session quiz</h2>
+            <p id="sessionRoomQuizStatus" class="resource-status" role="status" aria-live="polite"></p>
+            <div id="sessionRoomQuizList" class="resource-list"></div>
+            <div id="sessionRoomFocusStatus" class="session-quiz-focus-alert hide" role="status" aria-live="assertive"></div>
+            <section id="tutorSessionQuizBuilder" class="session-quiz-builder hide" aria-labelledby="tutorSessionQuizBuilderTitle">
+              <h3 id="tutorSessionQuizBuilderTitle">Prepare a quiz from today’s lesson</h3>
+              <p class="sub">Upload your notes or the material you discussed. Gemini will draft questions, then you can review and edit them before preparing the quiz for this learner.</p>
+              <form id="sessionQuizUploadForm" class="session-quiz-upload-form">
+                <label for="sessionQuizResourceTitle">Lesson or material title
+                  <input id="sessionQuizResourceTitle" maxlength="120" required placeholder="e.g. Introduction to web systems">
+                </label>
+                <label id="sessionQuizSubjectField" for="sessionQuizSubject">Session subject
+                  <select id="sessionQuizSubject" required></select>
+                </label>
+                <label for="sessionQuizResourceDescription">Lesson notes or discussion summary <span class="muted">(optional with a handout)</span>
+                  <textarea id="sessionQuizResourceDescription" maxlength="2000" rows="3" placeholder="Add the key ideas from today’s discussion. Without a handout, enter at least 120 characters here."></textarea>
+                </label>
+                <label for="sessionQuizResourceFile">Handout <span class="muted">(optional · TXT, Markdown, or DOCX · up to 5 MB; PDF text generation is not supported yet)</span>
+                  <input id="sessionQuizResourceFile" type="file" accept=".txt,.md,.docx">
+                </label>
+                <label for="sessionQuizTitle">Quiz title
+                  <input id="sessionQuizTitle" maxlength="120" required placeholder="e.g. Web systems review">
+                </label>
+                <label for="sessionQuizMcCount">Multiple-choice questions
+                  <input id="sessionQuizMcCount" type="number" min="1" max="10" value="3" required>
+                </label>
+                <label for="sessionQuizIdCount">Identification questions
+                  <input id="sessionQuizIdCount" type="number" min="1" max="10" value="3" required>
+                </label>
+                <label class="consent-option" for="sessionQuizGeminiConsent">
+                  <input id="sessionQuizGeminiConsent" type="checkbox" required>
+                  <span>I authorize sending this lesson material and discussion notes to Gemini to draft quiz questions. I will review and edit the draft before it is used.</span>
+                </label>
+                <button id="sessionQuizGenerateButton" type="submit">Upload lesson and generate quiz</button>
+              </form>
+              <p id="sessionQuizBuilderStatus" class="resource-status" role="status" aria-live="polite"></p>
+            </section>
+          </section>
+        </div>
+      </div>
     </section>
   </main>
   </div>
+</div>
+
+<div id="acceptedRequestDialog" class="public-profile-overlay hide" role="presentation">
+  <section class="public-profile-modal session-request-dialog" role="dialog" aria-modal="true" aria-labelledby="acceptedRequestTitle">
+    <header class="public-profile-modal-header">
+      <div>
+        <p class="messages-kicker">C.R.A.I. · Session accepted</p>
+        <h1 id="acceptedRequestTitle">Request accepted!</h1>
+        <p id="acceptedRequestMessage">You can find this learner in the session area.</p>
+      </div>
+      <button id="acceptedRequestClose" class="ghost public-profile-close" type="button" aria-label="Close message">×</button>
+    </header>
+    <div class="quiz-dialog-actions">
+      <button id="acceptedRequestGoToRoom" type="button">Go to session area</button>
+      <button id="acceptedRequestStay" class="ghost" type="button">Stay on requests</button>
+    </div>
+  </section>
+</div>
+
+<div id="sessionRequestConfirmDialog" class="public-profile-overlay session-request-confirm-overlay hide" role="presentation">
+  <section class="public-profile-modal session-request-dialog" role="dialog" aria-modal="true" aria-labelledby="sessionRequestConfirmTitle">
+    <header class="public-profile-modal-header">
+      <div>
+        <p class="messages-kicker">C.R.A.I. · Session request</p>
+        <h1 id="sessionRequestConfirmTitle">Request a session?</h1>
+        <p id="sessionRequestConfirmMessage"></p>
+      </div>
+      <button id="sessionRequestConfirmClose" class="ghost public-profile-close" type="button" aria-label="Close confirmation">×</button>
+    </header>
+    <div class="quiz-dialog-actions">
+      <button id="sessionRequestConfirmSend" type="button">Send request</button>
+      <button id="sessionRequestConfirmCancel" class="ghost" type="button">Cancel</button>
+    </div>
+  </section>
+</div>
+
+<div id="sessionSubjectDialog" class="public-profile-overlay session-request-confirm-overlay hide" role="presentation">
+  <section class="public-profile-modal session-request-dialog" role="dialog" aria-modal="true" aria-labelledby="sessionSubjectTitle">
+    <header class="public-profile-modal-header">
+      <div>
+        <p class="messages-kicker">C.R.A.I. · Session request</p>
+        <h1 id="sessionSubjectTitle">Choose a subject</h1>
+        <p>What would you like this tutor to help you with?</p>
+      </div>
+      <button id="sessionSubjectClose" class="ghost public-profile-close" type="button" aria-label="Close subject selection">×</button>
+    </header>
+    <label for="sessionSubjectSelect">Subject
+      <select id="sessionSubjectSelect" required>
+        <option value="">Choose a subject</option>
+      </select>
+    </label>
+    <label for="sessionOccurrenceSelect">Available date and time
+      <select id="sessionOccurrenceSelect" required disabled>
+        <option value="">Choose a subject first</option>
+      </select>
+    </label>
+    <p id="sessionSubjectStatus" class="toast" role="status"></p>
+    <div class="quiz-dialog-actions">
+      <button id="sessionSubjectContinue" type="button">Continue</button>
+      <button id="sessionSubjectCancel" class="ghost" type="button">Cancel</button>
+    </div>
+  </section>
+</div>
+
+<div id="sessionRequestSuccessDialog" class="public-profile-overlay session-request-confirm-overlay hide" role="presentation">
+  <section class="public-profile-modal session-request-dialog" role="dialog" aria-modal="true" aria-labelledby="sessionRequestSuccessTitle">
+    <header class="public-profile-modal-header">
+      <div>
+        <p class="messages-kicker">C.R.A.I. · Session request</p>
+        <h1 id="sessionRequestSuccessTitle">Request sent successfully!</h1>
+        <p id="sessionRequestSuccessMessage"></p>
+      </div>
+      <button id="sessionRequestSuccessClose" class="ghost public-profile-close" type="button" aria-label="Close confirmation">×</button>
+    </header>
+    <div class="quiz-dialog-actions">
+      <button id="sessionRequestSuccessDone" type="button">Done</button>
+    </div>
+  </section>
 </div>
 
 <!-- PROFILE PHOTO DIALOG -->
@@ -1156,6 +1454,7 @@ body.modal-open{overflow:hidden}
         <p class="messages-kicker">C.R.A.I. · Video call</p>
         <h2 id="videoCallTitle">Session video call</h2>
       </div>
+      <button id="videoCallMinimize" class="ghost" type="button">Minimize call</button>
       <button id="videoCallClose" class="ghost" type="button" aria-label="Leave video call">×</button>
     </header>
     <p id="videoCallStatus" class="resource-status" role="status" aria-live="polite"></p>
@@ -1199,7 +1498,6 @@ body.modal-open{overflow:hidden}
               <tbody>
                 <tr><th scope="row">Subjects</th><td><ul id="publicTutorSubjects" class="profile-list"></ul></td></tr>
                 <tr><th scope="row">Days available</th><td><ul id="publicTutorDays" class="profile-list"></ul></td></tr>
-                <tr><th scope="row">Available times</th><td><ul id="publicTutorTimes" class="profile-list"></ul></td></tr>
               </tbody>
             </table>
           </section>
@@ -1207,43 +1505,18 @@ body.modal-open{overflow:hidden}
             <h2>Session rate</h2>
             <p id="publicTutorRate"></p>
             <div class="public-tutor-contact">
-              <button id="openSessionRequest" type="button">Request a session</button>
+              <div class="public-tutor-contact-actions">
+                <button id="openSessionRequest" type="button">Request a session</button>
+                <button id="publicTutorViewMore" class="ghost" type="button">View more</button>
+              </div>
               <p id="sessionRequestActionStatus" class="toast" role="status"></p>
+              <a id="sessionRequestLogin" class="hide" href="/">Log in, then return to this profile to request a session</a>
             </div>
           </section>
         </div>
 
       </div>
     </div>
-  </section>
-</div>
-
-<div id="sessionRequestDialog" class="public-profile-overlay hide" role="presentation">
-  <section class="public-profile-modal session-request-dialog" role="dialog" aria-modal="true" aria-labelledby="sessionRequestTitle">
-    <header class="public-profile-modal-header">
-      <div>
-        <p class="messages-kicker">C.R.A.I. · Session request</p>
-        <h1 id="sessionRequestTitle">Request a tutoring session</h1>
-      </div>
-      <button id="closeSessionRequestDialog" class="ghost public-profile-close" type="button" aria-label="Close session request">×</button>
-    </header>
-    <form id="sessionRequestForm" class="session-request-form">
-      <p>Suggest a time that works for you. This is only a proposal and does not change the tutor’s published availability. The tutor will confirm or decline the request.</p>
-      <label for="sessionAvailabilitySlot">Published weekly time slot
-        <select id="sessionAvailabilitySlot">
-          <option value="">Choose a tutor’s published time</option>
-        </select>
-      </label>
-      <label for="sessionRequestedFor">Proposed date and time
-        <input id="sessionRequestedFor" type="datetime-local" required>
-      </label>
-      <label for="sessionRequestNote">Message to the tutor <span class="muted">(optional)</span>
-        <textarea id="sessionRequestNote" maxlength="500" rows="3" placeholder="Add a short note about what you'd like help with." aria-label="Message to the tutor"></textarea>
-      </label>
-      <button id="sessionRequestSubmit">Send session request</button>
-      <p id="sessionRequestFormStatus" class="request-form-status" role="status"></p>
-      <a id="sessionRequestLogin" class="hide" href="/">Log in and return to this profile</a>
-    </form>
   </section>
 </div>
 
@@ -1322,6 +1595,14 @@ const show = view => {
 };
 let activeConversation = null;
 let publicTutorId = null;
+let pendingSessionTutorId = null;
+let pendingSessionSubjectId = null;
+let pendingSessionSubjectName = '';
+let pendingSessionAvailabilityId = null;
+let pendingSessionScheduledFor = '';
+let publicTutorSubjectOptions = [];
+let publicTutorSubjectNames = [];
+let sessionRequestFeedbackReturnsToSearch = false;
 let publicProfileReturnFocus = null;
 let learningMaterialsReturnFocus = null;
 let profilePhotoReturnFocus = null;
@@ -1338,6 +1619,9 @@ let tutorResourceFilterSubjectId = null;
 let activeQuizAttemptId = null;
 let activeQuizMonitorConsent = false;
 let activeQuizFocusHandlers = null;
+let activeSessionQuizRunId = null;
+let sessionQuizInProgress = false;
+let sessionQuizReadyPreferences = {};
 let activeVideoCall = null;
 let messagePollTimer = null;
 let messagePollInFlight = false;
@@ -1532,8 +1816,19 @@ const swap = reg => {
 };
 let editingAvailabilityId = null;
 let editingAvailabilitySubjectId = null;
+let activeSessionRoomTimer = null;
+let activeSessionRoom = null;
+let sessionRequestsCache = [];
+let tutorCalendarAvailability = [];
+let tutorCalendarMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 
 async function route() {
+  const sessionRoomMatch = window.location.pathname.match(/^\/sessions\/(\d+)\/?$/);
+  if (!sessionRoomMatch && activeSessionRoomTimer) {
+    window.clearInterval(activeSessionRoomTimer);
+    activeSessionRoomTimer = null;
+    activeSessionRoom = null;
+  }
   const publicProfileMatch = window.location.pathname.match(/^\/tutors\/(\d+)\/?$/);
   if (publicProfileMatch) {
     if ($('dashboard').classList.contains('hide')) {
@@ -1603,6 +1898,15 @@ async function route() {
   startDashboardClock();
   connectRealtimeChat();
   refreshPushNotificationState();
+  if (sessionRoomMatch) {
+    await loadSessionRoom(Number(sessionRoomMatch[1]));
+    return;
+  }
+  const fullTutorProfileMatch = window.location.pathname.match(/^\/tutors\/(\d+)\/profile\/?$/);
+  if (fullTutorProfileMatch) {
+    await loadFullTutorProfile(Number(fullTutorProfileMatch[1]));
+    return;
+  }
   const query = new URLSearchParams(window.location.search);
   const requestTutorId = Number(query.get('requestTutor'));
   if (query.has('requestTutor') && Number.isSafeInteger(requestTutorId) && requestTutorId > 0) {
@@ -2247,36 +2551,6 @@ async function refreshTutorResources() {
   await refreshTutorQuizzes();
 }
 
-async function loadLearnerResources(subject) {
-  const list = $('learnerResourceList');
-  const status = $('learnerResourceStatus');
-  list.replaceChildren();
-  status.textContent = 'Loading shared resources…';
-  const { ok, data } = await api(`/api/resources?subject=${encodeURIComponent(subject)}`);
-  if (!ok) {
-    status.textContent = data.error || 'Could not load resources.';
-    return;
-  }
-  status.textContent = data.resources.length
-    ? `${data.resources.length} shared resource${data.resources.length === 1 ? '' : 's'} for ${subject}`
-    : `No resources are currently shared for ${subject}.`;
-  data.resources.forEach(resource => {
-    const card = document.createElement('article');
-    card.className = 'resource-card';
-    const heading = document.createElement('h4');
-    heading.textContent = resource.title;
-    card.append(heading);
-    appendResourceMetadata(card, resource);
-    const download = document.createElement('a');
-    download.href =
-      `/api/resources/${resource.id}/download?subject=${encodeURIComponent(resource.subject_name)}`;
-    download.textContent = 'Download resource';
-    card.append(download);
-    list.append(card);
-  });
-  await loadLearnerQuizzes(subject);
-}
-
 async function refreshTutorQuizzes() {
   const list = $('tutorQuizList');
   const status = $('tutorQuizStatus');
@@ -2363,12 +2637,24 @@ function cleanupQuizFocusMonitoring() {
 }
 
 function closeQuizDialog() {
+  if (sessionQuizInProgress) return;
   cleanupQuizFocusMonitoring();
   $('quizDialog').classList.add('hide');
+  $('quizDialog').classList.remove('session-quiz-overlay');
+  $('quizDialogClose').classList.remove('hide');
+  const keepCallDocked = Boolean(activeVideoCall && activeSessionRoom);
+  if (keepCallDocked) {
+    $('videoCallDialog').classList.add('session-call-dock');
+    $('videoCallMinimize').textContent = 'Restore call';
+  } else {
+    $('videoCallDialog').classList.remove('session-call-dock');
+    $('videoCallMinimize').textContent = 'Minimize call';
+  }
   document.body.classList.remove('modal-open');
+  document.body.classList.remove('session-quiz-open');
 }
 
-async function openTutorQuiz(quizId, statusMessage = '') {
+async function openTutorQuiz(quizId, statusMessage = '', sessionRequestId = null) {
   const { ok, data } = await api(`/api/quizzes/${quizId}`);
   if (!ok) {
     $('tutorQuizStatus').textContent = data.error || 'Could not load quiz.';
@@ -2376,6 +2662,12 @@ async function openTutorQuiz(quizId, statusMessage = '') {
   }
   const quiz = data.quiz;
   openQuizDialog(quiz.title, statusMessage);
+  if (sessionRequestId && activeVideoCall) {
+    $('quizDialog').classList.add('session-quiz-overlay');
+    $('videoCallDialog').classList.add('session-call-dock');
+    $('videoCallMinimize').textContent = 'Call is pinned';
+    document.body.classList.add('session-quiz-open');
+  }
   const content = $('quizDialogContent');
   if (quiz.status === 'published') {
     const notice = document.createElement('p');
@@ -2547,7 +2839,11 @@ async function openTutorQuiz(quizId, statusMessage = '') {
   form.onsubmit = async event => {
     event.preventDefault();
     if (await saveDraft()) {
-      await openTutorQuiz(quiz.id, 'Draft saved. Review the keys and excerpts before publishing.');
+      await openTutorQuiz(
+        quiz.id,
+        'Draft saved. Review the keys and excerpts before publishing.',
+        sessionRequestId
+      );
     }
   };
   content.append(form);
@@ -2556,13 +2852,28 @@ async function openTutorQuiz(quizId, statusMessage = '') {
   actions.className = 'quiz-dialog-actions';
   const publish = document.createElement('button');
   publish.type = 'button';
-  publish.textContent = 'Save and publish';
+  publish.textContent = sessionRequestId ? 'Save and prepare for learner' : 'Save and publish';
   publish.onclick = async () => {
     if (!form.reportValidity()) return;
     publish.disabled = true;
     const saved = await saveDraft();
     publish.disabled = false;
     if (!saved) return;
+    if (sessionRequestId) {
+      publish.disabled = true;
+      const prepared = await api(`/api/session-requests/${sessionRequestId}/quiz-runs`, {
+        quiz_id: quiz.id
+      });
+      publish.disabled = false;
+      if (!prepared.ok) {
+        $('quizDialogStatus').textContent = prepared.data.error || 'Could not prepare this session quiz.';
+        return;
+      }
+      closeQuizDialog();
+      $('sessionQuizBuilderStatus').textContent = 'Quiz prepared. The learner can review it and mark when they are ready.';
+      await refreshSessionQuizRuns();
+      return;
+    }
     const result = await api(`/api/quizzes/${quiz.id}/publish`, {}, 'POST');
     if (!result.ok) {
       $('quizDialogStatus').textContent = result.data.error || 'Could not publish quiz.';
@@ -2635,7 +2946,11 @@ async function openTutorQuiz(quizId, statusMessage = '') {
       return;
     }
     await refreshTutorQuizzes();
-    await openTutorQuiz(quiz.id, 'Regenerated draft. Review every question and answer key.');
+      await openTutorQuiz(
+        quiz.id,
+        'Regenerated draft. Review every question and answer key.',
+        sessionRequestId
+      );
   };
   regenerate.append(regenerateSummary, regenerateForm);
   content.append(regenerate);
@@ -2671,7 +2986,7 @@ async function showTutorQuizAttempts(quizId, title) {
     heading.textContent = attempt.learner_name;
     const score = document.createElement('p');
     score.textContent = attempt.submitted_at
-      ? `Score: ${attempt.score}/${attempt.total_questions} · Submitted ${attempt.submitted_at}`
+      ? `Score: ${attempt.score}/${attempt.total_questions} · ${attempt.grading_method === 'gemini' ? 'Gemini-assisted grading' : 'Answer-key grading'} · Submitted ${attempt.submitted_at}`
       : `Started ${attempt.started_at} · Not submitted`;
     const focus = document.createElement('p');
     focus.textContent = attempt.focus_consent
@@ -2704,42 +3019,12 @@ async function showTutorQuizAttempts(quizId, title) {
   });
 }
 
-async function loadLearnerQuizzes(subject) {
-  const list = $('learnerQuizList');
-  const status = $('learnerQuizStatus');
-  list.replaceChildren();
-  status.textContent = 'Loading published quizzes…';
-  const { ok, data } = await api(`/api/quizzes?subject=${encodeURIComponent(subject)}`);
-  if (!ok) {
-    status.textContent = data.error || 'Could not load quizzes.';
-    return;
-  }
-  status.textContent = data.quizzes.length
-    ? `${data.quizzes.length} published quiz${data.quizzes.length === 1 ? '' : 'zes'}`
-    : `No published quizzes for ${subject}.`;
-  data.quizzes.forEach(quiz => {
-    const card = document.createElement('article');
-    card.className = 'resource-card';
-    const heading = document.createElement('h4');
-    heading.textContent = quiz.title;
-    const details = document.createElement('p');
-    details.textContent =
-      `${quiz.subject_name} · ${quiz.resource_title} · ${quiz.tutor_name} · ${quiz.question_count} questions`;
-    const take = document.createElement('button');
-    take.type = 'button';
-    take.textContent = quiz.assigned ? 'Start assigned quiz' : 'Take quiz';
-    take.onclick = () => openLearnerQuiz(quiz.id, subject);
-    card.append(heading, details, take);
-    list.append(card);
-  });
-}
-
 async function openLearnerQuiz(quizId, subject) {
   const { ok, data } = await api(
     `/api/quizzes/${quizId}?subject=${encodeURIComponent(subject)}`
   );
   if (!ok) {
-    $('learnerQuizStatus').textContent = data.error || 'Could not load quiz.';
+    $('sessionRoomQuizStatus').textContent = data.error || 'Could not load quiz.';
     return;
   }
   const quiz = data.quiz;
@@ -2926,6 +3211,12 @@ $('quizDialog').onclick = event => {
 };
 $('videoCallClose').onclick = () => closeVideoCall();
 $('leaveCallButton').onclick = () => closeVideoCall();
+$('videoCallMinimize').onclick = () => {
+  if (document.body.classList.contains('session-quiz-open')) return;
+  const minimized = $('videoCallDialog').classList.toggle('session-call-dock');
+  $('videoCallMinimize').textContent = minimized ? 'Restore call' : 'Minimize call';
+  document.body.classList.toggle('modal-open', !minimized);
+};
 $('callMuteButton').onclick = toggleCallAudio;
 $('callVideoButton').onclick = toggleCallVideo;
 $('videoCallDialog').onclick = event => {
@@ -2970,18 +3261,6 @@ $('resourceUploadForm').onsubmit = async event => {
   }
 };
 
-function nextDateForSlot(day, time) {
-  const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  const [hours, minutes] = time.split(':').map(Number);
-  const earliest = new Date(Date.now() + 60 * 60 * 1000);
-  const target = new Date(earliest);
-  target.setHours(hours, minutes, 0, 0);
-  let dayDifference = (weekdays.indexOf(day) - earliest.getDay() + 7) % 7;
-  target.setDate(earliest.getDate() + dayDifference);
-  if (target <= earliest) target.setDate(target.getDate() + 7);
-  return target;
-}
-
 async function loadPublicTutorProfile(tutorId) {
   publicTutorId = Number(tutorId);
   $('tutorPublicProfile').classList.remove('hide');
@@ -2989,11 +3268,8 @@ async function loadPublicTutorProfile(tutorId) {
   $('closeTutorProfile').focus();
   $('publicProfileContent').classList.add('hide');
   $('publicProfileStatus').textContent = 'Loading tutor profile…';
-  $('sessionRequestForm').reset();
-  $('sessionRequestFormStatus').textContent = '';
   $('sessionRequestActionStatus').textContent = '';
   $('sessionRequestLogin').classList.add('hide');
-  $('sessionRequestedFor').min = toLocalDateTimeValue(new Date(Date.now() + 60 * 60 * 1000));
   const { ok, data } = await api(`/api/tutors/${tutorId}`);
   if (!ok) {
     $('publicProfileStatus').textContent = data.error || 'Tutor profile could not be found.';
@@ -3003,6 +3279,8 @@ async function loadPublicTutorProfile(tutorId) {
   $('publicProfileContent').classList.remove('hide');
   animateView($('publicProfileContent'));
   $('publicTutorName').textContent = data.full_name;
+  publicTutorSubjectOptions = data.subject_options || [];
+  publicTutorSubjectNames = Array.isArray(data.subjects) ? data.subjects : [];
   const publicTutorAvatar = $('publicTutorAvatar');
   publicTutorAvatar.onerror = () => {
     publicTutorAvatar.onerror = null;
@@ -3029,23 +3307,11 @@ async function loadPublicTutorProfile(tutorId) {
     subjects.append(item);
   }
   const days = $('publicTutorDays');
-  const times = $('publicTutorTimes');
   days.replaceChildren();
-  times.replaceChildren();
-  const slotSelect = $('sessionAvailabilitySlot');
-  slotSelect.replaceChildren();
-  const placeholder = document.createElement('option');
-  placeholder.value = '';
-  placeholder.textContent = data.availability.length
-    ? 'Choose a tutor’s published time'
-    : 'No weekly time listed';
-  slotSelect.append(placeholder);
-  slotSelect.required = true;
-  $('sessionRequestSubmit').disabled = data.availability.length === 0;
-  $('openSessionRequest').disabled = data.availability.length === 0;
+  $('openSessionRequest').disabled = false;
   $('sessionRequestActionStatus').textContent = data.availability.length
     ? ''
-    : 'This tutor has not published availability yet.';
+    : 'You can still request a session; the tutor can suggest a time.';
   if (data.availability.length) {
     const availableDays = [...new Set(data.availability.map(slot => slot.day))];
     availableDays.forEach(day => {
@@ -3053,30 +3319,116 @@ async function loadPublicTutorProfile(tutorId) {
       item.textContent = day;
       days.append(item);
     });
-    data.availability.forEach(slot => {
-      const timeItem = document.createElement('li');
-      timeItem.textContent = `${slot.day}: ${slot.start_time}–${slot.end_time}`;
-      times.append(timeItem);
-      const option = document.createElement('option');
-      option.value = slot.id;
-      option.dataset.day = slot.day;
-      option.dataset.start = slot.start_time;
-      option.dataset.end = slot.end_time;
-      option.textContent = `${slot.day}, ${slot.start_time}–${slot.end_time}`;
-      slotSelect.append(option);
-    });
   } else {
-    [days, times].forEach(list => {
-      const item = document.createElement('li');
-      item.textContent = 'Not available yet.';
-      list.append(item);
-    });
+    const item = document.createElement('li');
+    item.textContent = 'Not available yet.';
+    days.append(item);
   }
   $('publicTutorRate').textContent = data.is_free
     ? 'Free'
     : `${data.rate_per_hour} per hour`;
   $('messageTutorStatus').textContent = '';
   $('messageTutorLogin').classList.add('hide');
+}
+
+async function loadFullTutorProfile(tutorId) {
+  showDashboardPage('fullTutorProfilePage', null);
+  $('fullTutorContent').classList.add('hide');
+  $('fullTutorStatus').textContent = 'Loading tutor profile…';
+  const { ok, data } = await api(`/api/tutors/${tutorId}`);
+  if (!ok) {
+    $('fullTutorStatus').textContent = data.error || 'Tutor profile could not be loaded.';
+    return;
+  }
+  $('fullTutorName').textContent = data.full_name;
+  $('fullTutorAvatar').src = data.has_profile_photo
+    ? `/api/tutors/${tutorId}/photo?v=${Date.now()}`
+    : '/default-avatar.svg';
+  $('fullTutorAvatar').alt = data.has_profile_photo
+    ? `${data.full_name}'s profile picture`
+    : 'Default profile picture';
+  $('fullTutorRequest').onclick = () => {
+    window.history.pushState({ tutorProfile: true }, '', `/tutors/${tutorId}`);
+    loadPublicTutorProfile(tutorId);
+  };
+  const subjects = $('fullTutorSubjects');
+  subjects.replaceChildren();
+  (data.subjects || []).forEach(subject => {
+    const tag = document.createElement('span');
+    tag.textContent = subject;
+    subjects.append(tag);
+  });
+  const days = $('fullTutorDays');
+  days.replaceChildren();
+  [...new Set((data.availability || []).map(slot => slot.day))].forEach(day => {
+    const item = document.createElement('li');
+    item.textContent = day;
+    days.append(item);
+  });
+  if (!days.children.length) {
+    const item = document.createElement('li');
+    item.textContent = 'Schedule to be arranged with the tutor.';
+    days.append(item);
+  }
+  $('fullTutorRate').textContent = data.is_free ? 'Free sessions' : `${data.rate_per_hour} per hour`;
+  $('fullTutorStatus').textContent = '';
+  $('fullTutorContent').classList.remove('hide');
+  const materials = $('fullTutorMaterials');
+  materials.replaceChildren();
+  const subjectOptions = data.subject_options || [];
+  if (!subjectOptions.length) {
+    const empty = document.createElement('div');
+    empty.className = 'full-tutor-empty';
+    empty.textContent = 'This tutor has not added any teaching subjects yet.';
+    materials.append(empty);
+    return;
+  }
+  const subjectResults = await Promise.all(subjectOptions.map(async subject => {
+    const query = new URLSearchParams({ subject: subject.subject_name, tutor_id: String(tutorId) });
+    return { subject, ...await api(`/api/resources?${query.toString()}`) };
+  }));
+  subjectResults.forEach(({ subject, ok: resourcesOk, data: resourcesData }) => {
+    const section = document.createElement('section');
+    section.className = 'full-tutor-material-subject';
+    const heading = document.createElement('h3');
+    heading.textContent = subject.subject_name;
+    section.append(heading);
+    if (!resourcesOk) {
+      const message = document.createElement('p');
+      message.className = 'full-tutor-empty';
+      message.textContent = resourcesData.error || 'Could not load shared materials.';
+      section.append(message);
+    } else if (!resourcesData.resources.length) {
+      const message = document.createElement('p');
+      message.className = 'full-tutor-empty';
+      message.textContent = `No learning materials have been shared for ${subject.subject_name} yet.`;
+      section.append(message);
+    } else {
+      const list = document.createElement('div');
+      list.className = 'full-tutor-materials-list';
+      resourcesData.resources.forEach(resource => {
+        const card = document.createElement('article');
+        card.className = 'full-tutor-material';
+        const title = document.createElement('h4');
+        title.textContent = resource.title;
+        card.append(title);
+        if (resource.description) {
+          const description = document.createElement('p');
+          description.textContent = resource.description;
+          card.append(description);
+        }
+        const details = document.createElement('p');
+        details.textContent = `${resource.file_name} · ${formatResourceSize(resource.file_size)}`;
+        const download = document.createElement('a');
+        download.href = `/api/resources/${resource.id}/download?subject=${encodeURIComponent(subject.subject_name)}`;
+        download.textContent = 'Download material';
+        card.append(details, download);
+        list.append(card);
+      });
+      section.append(list);
+    }
+    materials.append(section);
+  });
 }
 
 function openLearningMaterialsDialog() {
@@ -3117,44 +3469,225 @@ $('learningMaterialsDialog').onclick = event => {
   if (event.target === $('learningMaterialsDialog')) closeLearningMaterialsDialog();
 };
 
-$('sessionAvailabilitySlot').onchange = () => {
-  const option = $('sessionAvailabilitySlot').selectedOptions[0];
-  if (!option?.dataset.day) return;
-  $('sessionRequestedFor').value = toLocalDateTimeValue(
-    nextDateForSlot(option.dataset.day, option.dataset.start)
-  );
-};
-
 function openSessionRequestDialog() {
-  if (!publicTutorId || $('openSessionRequest').disabled) return;
-  $('sessionRequestFormStatus').textContent = '';
+  if (!publicTutorId) return;
+  if (!publicTutorSubjectOptions.length) {
+    showSessionRequestFeedback(
+      publicTutorSubjectNames.length ? 'Restart the app to continue' : 'No subjects available',
+      publicTutorSubjectNames.length
+        ? `This tutor teaches ${publicTutorSubjectNames.join(', ')}, but the running server has not loaded the latest subject-selection update. Stop and restart Flask, then refresh this page.`
+        : 'This tutor has not added any subjects yet.'
+    );
+    return;
+  }
+  const tutorName = $('publicTutorName').textContent.trim();
+  pendingSessionTutorId = publicTutorId;
+  const subjectSelect = $('sessionSubjectSelect');
+  subjectSelect.replaceChildren();
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = 'Choose a subject';
+  subjectSelect.append(placeholder);
+  publicTutorSubjectOptions.forEach(subject => {
+    const option = document.createElement('option');
+    option.value = String(subject.id);
+    option.textContent = subject.subject_name;
+    subjectSelect.append(option);
+  });
+  subjectSelect.value = '';
+  $('sessionOccurrenceSelect').replaceChildren(new Option('Choose a subject first', ''));
+  $('sessionOccurrenceSelect').disabled = true;
+  subjectSelect.onchange = loadTutorSessionSlots;
+  $('sessionSubjectStatus').textContent = '';
   $('sessionRequestLogin').classList.add('hide');
-  $('sessionRequestDialog').classList.remove('hide');
-  document.body.classList.add('modal-open');
-  $('closeSessionRequestDialog').focus();
+  $('sessionSubjectDialog').classList.remove('hide');
+  subjectSelect.focus();
 }
 
-function closeSessionRequestDialog() {
-  $('sessionRequestDialog').classList.add('hide');
-  if (
-    $('tutorPublicProfile').classList.contains('hide')
-    && $('learningMaterialsDialog').classList.contains('hide')
-  ) {
-    document.body.classList.remove('modal-open');
+async function loadTutorSessionSlots() {
+  const subjectId = Number($('sessionSubjectSelect').value);
+  const slotSelect = $('sessionOccurrenceSelect');
+  slotSelect.replaceChildren(new Option('Loading dates…', ''));
+  slotSelect.disabled = true;
+  if (!subjectId) {
+    slotSelect.replaceChildren(new Option('Choose a subject first', ''));
+    $('sessionSubjectStatus').textContent = '';
+    return;
   }
-  if (!$('openSessionRequest').disabled && $('openSessionRequest').isConnected) {
+  $('sessionSubjectStatus').textContent = 'Checking this tutor’s available dates…';
+  const { ok, data } = await api(
+    `/api/tutors/${publicTutorId}/session-slots?subject_id=${subjectId}&timezone_offset_minutes=${new Date().getTimezoneOffset()}`
+  );
+  if (!ok) {
+    slotSelect.replaceChildren(new Option('Could not load dates', ''));
+    $('sessionSubjectStatus').textContent = data.error || 'Could not load available dates.';
+    return;
+  }
+  slotSelect.replaceChildren(new Option('Choose a date and time', ''));
+  data.slots.forEach(slot => {
+    const date = new Date(`${slot.date}T00:00:00`);
+    const start = new Date(`1970-01-01T${slot.start_time}:00`);
+    const end = new Date(`1970-01-01T${slot.end_time}:00`);
+    const label = `${date.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })} · ${start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}–${end.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} · ${slot.available ? 'Available' : 'Booked'}`;
+    const option = document.createElement('option');
+    option.value = slot.scheduled_for;
+    option.dataset.availabilityId = String(slot.availability_id);
+    option.disabled = !slot.available;
+    option.textContent = label;
+    slotSelect.append(option);
+  });
+  slotSelect.disabled = data.slots.length === 0;
+  const availableCount = data.slots.filter(slot => slot.available).length;
+  $('sessionSubjectStatus').textContent = data.slots.length
+    ? `${availableCount} available date${availableCount === 1 ? '' : 's'} in the next 90 days. Booked times are shown as unavailable.`
+    : 'This tutor has no matching future availability for this subject.';
+}
+
+function continueSessionSubjectSelection() {
+  const subjectId = Number($('sessionSubjectSelect').value);
+  const subject = publicTutorSubjectOptions.find(item => item.id === subjectId);
+  if (!subject) {
+    $('sessionSubjectStatus').textContent = 'Choose a subject this tutor teaches.';
+    $('sessionSubjectSelect').focus();
+    return;
+  }
+  const selectedOccurrence = $('sessionOccurrenceSelect').selectedOptions[0];
+  if (!selectedOccurrence?.value || selectedOccurrence.disabled) {
+    $('sessionSubjectStatus').textContent = 'Choose an available date and time.';
+    $('sessionOccurrenceSelect').focus();
+    return;
+  }
+  pendingSessionSubjectId = subject.id;
+  pendingSessionSubjectName = subject.subject_name;
+  pendingSessionAvailabilityId = Number(selectedOccurrence.dataset.availabilityId);
+  pendingSessionScheduledFor = selectedOccurrence.value;
+  $('sessionSubjectDialog').classList.add('hide');
+  const tutorName = $('publicTutorName').textContent.trim();
+  $('sessionRequestConfirmMessage').textContent =
+    `Request ${pendingSessionSubjectName} tutoring with ${tutorName} on ${new Date(pendingSessionScheduledFor).toLocaleString()}?`;
+  $('sessionRequestConfirmDialog').classList.remove('hide');
+  $('sessionRequestConfirmSend').focus();
+}
+
+function closeSessionSubjectSelection() {
+  $('sessionSubjectDialog').classList.add('hide');
+  pendingSessionTutorId = null;
+  pendingSessionAvailabilityId = null;
+  pendingSessionScheduledFor = '';
+  if ($('openSessionRequest').isConnected) $('openSessionRequest').focus();
+}
+
+function closeSessionRequestConfirmation() {
+  $('sessionRequestConfirmDialog').classList.add('hide');
+  pendingSessionTutorId = null;
+  pendingSessionSubjectId = null;
+  pendingSessionSubjectName = '';
+  pendingSessionAvailabilityId = null;
+  pendingSessionScheduledFor = '';
+  if ($('openSessionRequest').isConnected) $('openSessionRequest').focus();
+}
+
+async function confirmSessionRequest() {
+  const tutorId = pendingSessionTutorId;
+  const subjectId = pendingSessionSubjectId;
+  const subjectName = pendingSessionSubjectName;
+  const availabilityId = pendingSessionAvailabilityId;
+  const scheduledFor = pendingSessionScheduledFor;
+  if (!tutorId || !subjectId || !availabilityId || !scheduledFor) return;
+  const tutorName = $('publicTutorName').textContent.trim();
+  const button = $('openSessionRequest');
+  const confirmButton = $('sessionRequestConfirmSend');
+  button.disabled = true;
+  confirmButton.disabled = true;
+  $('sessionRequestActionStatus').textContent = 'Sending your request…';
+  const { ok, data } = await api('/session-requests', {
+    tutor_id: tutorId,
+    subject_id: subjectId,
+    availability_id: availabilityId,
+    scheduled_for: scheduledFor,
+    timezone_offset_minutes: new Date(scheduledFor).getTimezoneOffset()
+  });
+  button.disabled = false;
+  confirmButton.disabled = false;
+  closeSessionRequestConfirmation();
+  if (!ok) {
+    $('sessionRequestActionStatus').textContent = data.error || 'Could not send session request.';
+    if (data.error === 'Not authenticated') {
+      $('sessionRequestLogin').href = `/?requestTutor=${encodeURIComponent(tutorId)}`;
+      $('sessionRequestLogin').classList.remove('hide');
+    }
+    pendingSessionSubjectId = null;
+    pendingSessionSubjectName = '';
+    pendingSessionAvailabilityId = null;
+    pendingSessionScheduledFor = '';
+    showSessionRequestFeedback(
+      data.error?.includes('pending') ? 'Request already pending' : 'Could not send request',
+      data.error || 'Could not send session request.'
+    );
+    return;
+  }
+  $('sessionRequestActionStatus').textContent = '';
+  closeTutorProfile();
+  showDashboardPage('findTutorPage', $('learnerNavBtn'));
+  sessionRequestFeedbackReturnsToSearch = true;
+  showSessionRequestFeedback(
+    'Request sent successfully!',
+    `Your request to ${tutorName} for ${subjectName} tutoring on ${new Date(scheduledFor).toLocaleString()} was sent.`
+  );
+  refreshSessionRequestCount();
+}
+
+function showSessionRequestFeedback(title, message) {
+  $('sessionRequestSuccessTitle').textContent = title;
+  $('sessionRequestSuccessMessage').textContent = message;
+  $('sessionRequestSuccessDialog').classList.remove('hide');
+  $('sessionRequestSuccessDone').focus();
+}
+
+function closeSessionRequestSuccess() {
+  $('sessionRequestSuccessDialog').classList.add('hide');
+  if (sessionRequestFeedbackReturnsToSearch) {
+    sessionRequestFeedbackReturnsToSearch = false;
+    $('tutorSearchName').focus();
+  } else if ($('openSessionRequest').isConnected) {
     $('openSessionRequest').focus();
   }
 }
 
 $('openSessionRequest').onclick = openSessionRequestDialog;
-$('closeSessionRequestDialog').onclick = closeSessionRequestDialog;
-$('sessionRequestDialog').onclick = event => {
-  if (event.target === $('sessionRequestDialog')) closeSessionRequestDialog();
+$('sessionSubjectContinue').onclick = continueSessionSubjectSelection;
+$('sessionSubjectCancel').onclick = closeSessionSubjectSelection;
+$('sessionSubjectClose').onclick = closeSessionSubjectSelection;
+$('sessionSubjectDialog').onclick = event => {
+  if (event.target === $('sessionSubjectDialog')) closeSessionSubjectSelection();
+};
+$('sessionRequestConfirmSend').onclick = confirmSessionRequest;
+$('sessionRequestConfirmCancel').onclick = closeSessionRequestConfirmation;
+$('sessionRequestConfirmClose').onclick = closeSessionRequestConfirmation;
+$('sessionRequestConfirmDialog').onclick = event => {
+  if (event.target === $('sessionRequestConfirmDialog')) closeSessionRequestConfirmation();
+};
+$('sessionRequestSuccessClose').onclick = closeSessionRequestSuccess;
+$('sessionRequestSuccessDone').onclick = closeSessionRequestSuccess;
+$('sessionRequestSuccessDialog').onclick = event => {
+  if (event.target === $('sessionRequestSuccessDialog')) closeSessionRequestSuccess();
 };
 
 function closeTutorProfile() {
-  if (!$('sessionRequestDialog').classList.contains('hide')) closeSessionRequestDialog();
+  if (!$('sessionSubjectDialog').classList.contains('hide')) {
+    $('sessionSubjectDialog').classList.add('hide');
+    pendingSessionTutorId = null;
+    pendingSessionAvailabilityId = null;
+    pendingSessionScheduledFor = '';
+  }
+  if (!$('sessionRequestConfirmDialog').classList.contains('hide')) {
+    $('sessionRequestConfirmDialog').classList.add('hide');
+    pendingSessionTutorId = null;
+    pendingSessionSubjectId = null;
+    pendingSessionSubjectName = '';
+    pendingSessionAvailabilityId = null;
+    pendingSessionScheduledFor = '';
+  }
   $('tutorPublicProfile').classList.add('hide');
   if ($('learningMaterialsDialog').classList.contains('hide')) {
     document.body.classList.remove('modal-open');
@@ -3168,14 +3701,32 @@ function closeTutorProfile() {
 }
 
 $('closeTutorProfile').onclick = closeTutorProfile;
+$('publicTutorViewMore').onclick = () => {
+  const tutorId = publicTutorId;
+  if (!tutorId) return;
+  closeTutorProfile();
+  window.history.pushState({ fullTutorProfile: true }, '', `/tutors/${tutorId}/profile`);
+  route();
+};
+$('fullTutorBack').onclick = async () => {
+  window.history.pushState({}, '', '/');
+  await route();
+  showDashboardPage('findTutorPage', $('learnerNavBtn'));
+};
 $('tutorPublicProfile').onclick = event => {
   if (event.target === $('tutorPublicProfile')) closeTutorProfile();
 };
 document.addEventListener('keydown', event => {
-  if (event.key === 'Escape' && !$('learningMaterialsDialog').classList.contains('hide')) {
+  if (event.key === 'Escape' && !$('sessionRequestSuccessDialog').classList.contains('hide')) {
+    closeSessionRequestSuccess();
+  } else if (event.key === 'Escape' && !$('sessionSubjectDialog').classList.contains('hide')) {
+    closeSessionSubjectSelection();
+  } else if (event.key === 'Escape' && !$('sessionRequestConfirmDialog').classList.contains('hide')) {
+    closeSessionRequestConfirmation();
+  } else if (event.key === 'Escape' && !$('acceptedRequestDialog').classList.contains('hide')) {
+    closeAcceptedRequestNotice();
+  } else if (event.key === 'Escape' && !$('learningMaterialsDialog').classList.contains('hide')) {
     closeLearningMaterialsDialog();
-  } else if (event.key === 'Escape' && !$('sessionRequestDialog').classList.contains('hide')) {
-    closeSessionRequestDialog();
   } else if (event.key === 'Escape' && !$('videoCallDialog').classList.contains('hide')) {
     closeVideoCall();
   } else if (event.key === 'Escape' && !$('quizDialog').classList.contains('hide')) {
@@ -3444,6 +3995,7 @@ async function startTutorConversationById(tutorId, statusElement = $('messageTut
 }
 
 function formatRequestedTime(value) {
+  if (!value) return 'To be arranged with the tutor';
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
 }
@@ -3453,14 +4005,18 @@ async function refreshSessionRequestCount() {
   if (!ok) {
     if (data.networkError) $('soonMsg').textContent = data.error;
     $('requestCountBadge').classList.add('hide');
+    $('acceptedSessionsCountBadge').classList.add('hide');
     return;
   }
   const incoming = data.requests.filter(item => item.direction === 'received' && item.status === 'pending').length;
   const outgoing = data.requests.filter(item => item.direction === 'sent' && item.status === 'pending').length;
   const isTutor = $('dashboard').dataset.role !== 'learner';
   const relevantCount = isTutor ? incoming : outgoing;
+  const acceptedCount = data.requests.filter(item => item.status === 'accepted').length;
   $('requestCountBadge').textContent = String(incoming);
   $('requestCountBadge').classList.toggle('hide', incoming === 0);
+  $('acceptedSessionsCountBadge').textContent = String(acceptedCount);
+  $('acceptedSessionsCountBadge').classList.toggle('hide', acceptedCount === 0);
   $('railRequestCount').textContent = String(relevantCount);
   $('railRequestLabel').textContent = isTutor ? 'Requests awaiting you' : 'Requests awaiting a tutor';
   $('railRoleMessage').textContent = relevantCount
@@ -3532,6 +4088,8 @@ function closeVideoCall(notifyPeer = true) {
   }
   if (call) stopVideoCallMedia(call);
   $('videoCallDialog').classList.add('hide');
+  $('videoCallDialog').classList.remove('session-call-dock');
+  $('videoCallMinimize').textContent = 'Minimize call';
   document.body.classList.remove('modal-open');
 }
 
@@ -3716,21 +4274,430 @@ function toggleCallVideo() {
   $('callVideoButton').textContent = enabled ? 'Enable video' : 'Disable video';
 }
 
+async function loadSessionRoom(requestId) {
+  if (activeSessionRoomTimer) window.clearInterval(activeSessionRoomTimer);
+  activeSessionRoomTimer = null;
+  activeSessionRoom = null;
+  showDashboardPage('sessionRoomView', null);
+  $('sessionRoomStatus').textContent = 'Loading session room…';
+  $('sessionRoomFocusStatus').classList.add('hide');
+  const { ok, data } = await api('/session-requests');
+  const sessionRequest = ok && Array.isArray(data.requests)
+    ? data.requests.find(item => item.id === requestId)
+    : null;
+  if (!sessionRequest || sessionRequest.status !== 'accepted') {
+    $('sessionRoomStatus').textContent = sessionRequest
+      ? 'This session room is available after the tutor accepts the request.'
+      : (data.error || 'Session not found or you do not have access.');
+    return;
+  }
+  const tutorId = sessionRequest.direction === 'received' ? currentUserId : sessionRequest.tutor_id;
+  const { ok: tutorOk, data: tutor } = await api(`/api/tutors/${tutorId}`);
+  if (!tutorOk) {
+    $('sessionRoomStatus').textContent = tutor.error || 'Tutor profile could not be loaded.';
+    return;
+  }
+  activeSessionRoom = { ...sessionRequest, tutorId, tutor };
+  $('sessionRoomStatus').textContent = '';
+  $('sessionRoomTitle').textContent = sessionRequest.direction === 'sent'
+    ? `Session with ${tutor.full_name}`
+    : `Session with ${sessionRequest.learner_name}`;
+  $('sessionRoomWhen').textContent = `Accepted session · ${formatRequestedTime(sessionRequest.scheduled_for)}`;
+  if (sessionRequest.requested_subject_name) {
+    $('sessionRoomWhen').textContent += ` · Subject: ${sessionRequest.requested_subject_name}`;
+  }
+  $('sessionTutorName').textContent = tutor.full_name;
+  $('sessionTutorRate').textContent = tutor.is_free ? 'Free sessions' : `Rate: ${tutor.rate_per_hour} per hour`;
+  $('sessionTutorSubjects').textContent = `Subjects: ${tutor.subjects.join(', ') || 'Not listed'}`;
+  $('sessionTutorAvatar').src = tutor.has_profile_photo
+    ? `/api/tutors/${tutorId}/photo?v=${Date.now()}`
+    : '/default-avatar.svg';
+  $('sessionTutorProfileLink').href = `/tutors/${tutorId}`;
+  $('sessionRoomCall').onclick = () => startVideoCall(sessionRequest);
+  $('sessionRoomMessage').onclick = () => startTutorConversationById(tutorId, $('sessionRoomCallStatus'));
+  $('sessionRoomCallStatus').textContent = '';
+  $('sessionRoomQuizList').replaceChildren();
+  $('sessionRoomQuizStatus').textContent = sessionRequest.direction === 'received'
+    ? 'After your discussion, prepare a lesson quiz here. The learner will mark when they are ready, and you start it when the call is connected.'
+    : 'Your tutor will prepare the quiz from the lesson. It will appear here when ready.';
+  $('tutorSessionQuizBuilder').classList.toggle('hide', sessionRequest.direction !== 'received');
+  const quizSubjectField = $('sessionQuizSubjectField');
+  const quizSubject = $('sessionQuizSubject');
+  quizSubject.replaceChildren();
+  if (sessionRequest.requested_subject_id) {
+    const option = new Option(
+      sessionRequest.requested_subject_name || 'Session subject',
+      String(sessionRequest.requested_subject_id)
+    );
+    quizSubject.append(option);
+    quizSubjectField.classList.add('hide');
+  } else {
+    (tutor.subject_options || []).forEach(subject => {
+      quizSubject.append(new Option(subject.subject_name, String(subject.id)));
+    });
+    quizSubjectField.classList.toggle('hide', !(tutor.subject_options || []).length);
+  }
+  $('sessionQuizBuilderStatus').textContent = '';
+  await refreshSessionQuizRuns();
+  activeSessionRoomTimer = window.setInterval(() => refreshSessionQuizRuns(), 3000);
+}
+
+async function refreshSessionQuizRuns() {
+  if (!activeSessionRoom) return;
+  const { ok, data } = await api(
+    `/api/session-requests/${activeSessionRoom.id}/quiz-runs`
+  );
+  if (!ok) {
+    $('sessionRoomQuizStatus').textContent = data.error || 'Could not update the session quiz.';
+    return;
+  }
+  const list = $('sessionRoomQuizList');
+  list.replaceChildren();
+  const focusAlerts = [];
+  const callConnected = Boolean(
+    activeVideoCall && activeVideoCall.peerConnection?.connectionState === 'connected'
+  );
+  data.runs.forEach(run => {
+    const card = document.createElement('article');
+    card.className = 'session-quiz-run';
+    const heading = document.createElement('h3');
+    heading.textContent = run.title;
+    const description = document.createElement('p');
+    card.append(heading, description);
+    if (data.is_tutor) {
+      if (run.status === 'waiting') {
+        description.textContent = run.learner_ready
+          ? 'The learner is ready. Start when your video call is connected.'
+          : 'Quiz reviewed and ready. Waiting for the learner to confirm they are ready.';
+        if (run.learner_ready) {
+          const start = document.createElement('button');
+          start.type = 'button';
+          start.textContent = 'Start quiz';
+          start.disabled = !callConnected;
+          start.title = callConnected ? '' : 'Connect the video call before starting the quiz.';
+          start.onclick = async () => {
+            start.disabled = true;
+            const result = await api(`/api/session-quiz-runs/${run.id}/start`, {}, 'POST');
+            if (!result.ok) {
+              $('sessionRoomQuizStatus').textContent = result.data.error || 'Could not start quiz.';
+              await refreshSessionQuizRuns();
+              return;
+            }
+            await refreshSessionQuizRuns();
+          };
+          card.append(start);
+          if (!callConnected) {
+            const callHint = document.createElement('p');
+            callHint.textContent = 'Join the video call and wait until it shows connected to start.';
+            card.append(callHint);
+          }
+        }
+      } else if (run.status === 'started') {
+        description.textContent = 'Quiz in progress. The learner’s call remains in a small window.';
+        (run.focus_events || []).forEach(event => {
+          focusAlerts.push(`${run.title}: ${event.event_type === 'hidden' ? 'quiz page hidden' : 'quiz page lost focus'} at ${event.occurred_at}.`);
+        });
+      } else if (run.status === 'submitted' || run.status === 'released') {
+        description.textContent = `Submitted result: ${run.score}/${run.total_questions} · ${run.grading_method === 'gemini' ? 'Gemini-assisted scoring' : 'answer-key scoring'}.`;
+        const review = document.createElement('button');
+        review.type = 'button';
+        review.className = 'ghost';
+        review.textContent = 'Review answers and focus events';
+        review.onclick = () => showTutorQuizAttempts(run.quiz_id, run.title);
+        card.append(review);
+        if (run.status === 'submitted') {
+          const release = document.createElement('button');
+          release.type = 'button';
+          release.textContent = 'Share result with learner';
+          release.onclick = async () => {
+            release.disabled = true;
+            const result = await api(`/api/session-quiz-runs/${run.id}/release`, {}, 'POST');
+            if (!result.ok) {
+              $('sessionRoomQuizStatus').textContent = result.data.error || 'Could not share result.';
+              release.disabled = false;
+              return;
+            }
+            await refreshSessionQuizRuns();
+          };
+          card.append(release);
+        } else {
+          const released = document.createElement('p');
+          released.className = 'session-quiz-shared-result';
+          released.textContent = 'Result shared with the learner.';
+          card.append(released);
+        }
+      }
+    } else if (run.status === 'waiting') {
+      if (run.learner_ready) {
+        description.textContent = 'You’re ready. Waiting for your tutor to start the quiz.';
+      } else {
+        description.textContent = 'Readiness check: choose your monitoring and grading preferences, then tell your tutor when you are ready.';
+        const options = document.createElement('div');
+        options.className = 'session-quiz-ready-options';
+        const preferences = sessionQuizReadyPreferences[run.id] || { focus: false, ai: false };
+        sessionQuizReadyPreferences[run.id] = preferences;
+        const focusLabel = document.createElement('label');
+        const focus = document.createElement('input');
+        focus.type = 'checkbox';
+        focus.checked = preferences.focus;
+        focus.onchange = () => { preferences.focus = focus.checked; };
+        focusLabel.append(focus, document.createTextNode('Allow the tutor to see when this quiz page is hidden or loses focus. This cannot block Alt+Tab or identify what was opened.'));
+        const aiLabel = document.createElement('label');
+        const ai = document.createElement('input');
+        ai.type = 'checkbox';
+        ai.checked = preferences.ai;
+        ai.onchange = () => { preferences.ai = ai.checked; };
+        aiLabel.append(ai, document.createTextNode('Allow my typed answers and the related question excerpts to be sent to Gemini for AI-assisted grading. If unchecked or unavailable, answers use exact answer-key matching.'));
+        options.append(focusLabel, aiLabel);
+        const ready = document.createElement('button');
+        ready.type = 'button';
+        ready.textContent = 'I’m ready for the quiz';
+        ready.onclick = async () => {
+          ready.disabled = true;
+          const result = await api(`/api/session-quiz-runs/${run.id}/ready`, {
+            focus_consent: focus.checked,
+            ai_grading_consent: ai.checked
+          }, 'POST');
+          if (!result.ok) {
+            $('sessionRoomQuizStatus').textContent = result.data.error || 'Could not notify your tutor.';
+            ready.disabled = false;
+            return;
+          }
+          sessionQuizReadyPreferences[run.id] = preferences;
+          $('sessionRoomQuizStatus').textContent = 'Your tutor has been notified. The quiz begins when they start it.';
+          await refreshSessionQuizRuns();
+        };
+        card.append(options, ready);
+      }
+    } else if (run.status === 'started') {
+      description.textContent = 'Your tutor has started the quiz. Keep the video call open while you work.';
+      if (activeSessionQuizRunId !== run.id) openSessionQuizAttempt(run);
+    } else if (run.status === 'submitted') {
+      description.textContent = 'Your answers are submitted. Your tutor will review and share the result.';
+    } else if (run.status === 'released') {
+      description.textContent = `Your tutor shared your result: ${run.score}/${run.total_questions} · ${run.grading_method === 'gemini' ? 'Gemini-assisted scoring' : 'answer-key scoring'}.`;
+      const resultNote = document.createElement('p');
+      resultNote.className = 'session-quiz-shared-result';
+      resultNote.textContent = 'Your result is now available. You can review it with your tutor during the call.';
+      card.append(resultNote);
+      if (activeSessionQuizRunId === run.id
+        && !$('quizDialog').classList.contains('hide')
+        && !sessionQuizInProgress) {
+        $('quizDialogContent').replaceChildren(resultNote.cloneNode(true));
+        $('quizDialogStatus').textContent =
+          `Result shared: ${run.score}/${run.total_questions} · ${run.grading_method === 'gemini' ? 'Gemini-assisted scoring' : 'answer-key scoring'}.`;
+      }
+    }
+    list.append(card);
+  });
+  const focusStatus = $('sessionRoomFocusStatus');
+  focusStatus.classList.toggle('hide', !data.is_tutor || !focusAlerts.length);
+  focusStatus.textContent = focusAlerts.length
+    ? `Focus notification: ${focusAlerts.join(' ')}`
+    : '';
+  if (!data.runs.length && !data.is_tutor) {
+    $('sessionRoomQuizStatus').textContent = 'Your tutor has not prepared a quiz yet. Keep talking in the call; it will appear here when ready.';
+  } else if (data.runs.length) {
+    $('sessionRoomQuizStatus').textContent = data.is_tutor
+      ? 'Review each AI draft before preparing it. The learner must mark ready, and the call must connect before you can start.'
+      : 'The quiz stays locked until your tutor starts it. Your result is shared only after tutor review.';
+  }
+}
+
+async function openSessionQuizAttempt(run) {
+  activeSessionQuizRunId = run.id;
+  const { ok, data } = await api(`/api/session-quiz-runs/${run.id}/quiz`);
+  if (!ok) {
+    activeSessionQuizRunId = null;
+    $('sessionRoomQuizStatus').textContent = data.error || 'Could not open the session quiz.';
+    return;
+  }
+  const quiz = data.quiz;
+  activeQuizAttemptId = quiz.attempt_id;
+  activeQuizMonitorConsent = quiz.focus_monitoring_enabled;
+  sessionQuizInProgress = true;
+  $('quizDialog').classList.add('session-quiz-overlay');
+  $('quizDialogClose').classList.add('hide');
+  $('videoCallDialog').classList.add('session-call-dock');
+  $('videoCallMinimize').textContent = 'Call is pinned';
+  document.body.classList.add('session-quiz-open');
+  openQuizDialog(quiz.title, 'Your tutor is here with you. Submit when you are finished.');
+  $('quizDialog').classList.add('session-quiz-overlay');
+  $('quizDialogClose').classList.add('hide');
+  const content = $('quizDialogContent');
+  const intro = document.createElement('p');
+  intro.className = 'quiz-focus-notice';
+  intro.textContent = `Lesson: ${quiz.resource_title} · ${quiz.subject_name}. Your video call stays open in the corner.`;
+  content.append(intro);
+  const form = document.createElement('form');
+  [1, 2].forEach(testNumber => {
+    const section = document.createElement('section');
+    const heading = document.createElement('h3');
+    heading.textContent = testNumber === 1 ? 'Test 1 · Multiple choice' : 'Test 2 · Identification';
+    section.append(heading);
+    quiz.questions.filter(question => question.test_number === testNumber).forEach(question => {
+      const card = document.createElement('article');
+      card.className = 'quiz-question-card';
+      const fieldset = document.createElement('fieldset');
+      const legend = document.createElement('legend');
+      legend.textContent = question.question;
+      fieldset.append(legend);
+      if (testNumber === 1) {
+        question.options.forEach((option, index) => {
+          const label = document.createElement('label');
+          label.className = 'quiz-choice';
+          const input = document.createElement('input');
+          input.type = 'radio';
+          input.name = `session-question-${question.id}`;
+          input.value = index;
+          label.append(input, document.createTextNode(option));
+          fieldset.append(label);
+        });
+      } else {
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.maxLength = 250;
+        input.dataset.questionId = question.id;
+        input.autocomplete = 'off';
+        input.setAttribute('aria-label', `Answer to question ${question.position}`);
+        fieldset.append(input);
+      }
+      card.append(fieldset);
+      section.append(card);
+    });
+    form.append(section);
+  });
+  const submit = document.createElement('button');
+  submit.type = 'submit';
+  submit.textContent = 'Submit quiz';
+  form.append(submit);
+  form.onsubmit = async event => {
+    event.preventDefault();
+    submit.disabled = true;
+    const answers = {};
+    quiz.questions.forEach(question => {
+      if (question.test_number === 1) {
+        const selected = form.querySelector(`input[name="session-question-${question.id}"]:checked`);
+        if (selected) answers[String(question.id)] = Number(selected.value);
+      } else {
+        const input = form.querySelector(`[data-question-id="${question.id}"]`);
+        if (input.value.trim()) answers[String(question.id)] = input.value.trim();
+      }
+    });
+    $('quizDialogStatus').textContent = 'Submitting and scoring your answers…';
+    const result = await api(`/api/quiz-attempts/${activeQuizAttemptId}/submit`, { answers });
+    if (!result.ok) {
+      submit.disabled = false;
+      $('quizDialogStatus').textContent = result.data.error || 'Could not submit quiz.';
+      return;
+    }
+    cleanupQuizFocusMonitoring();
+    sessionQuizInProgress = false;
+    $('quizDialogClose').classList.remove('hide');
+    const message = document.createElement('p');
+    message.className = 'session-quiz-shared-result';
+    message.textContent = 'Quiz submitted. Your tutor will review and share your result.';
+    content.replaceChildren(message);
+    $('quizDialogStatus').textContent = '';
+    await refreshSessionQuizRuns();
+  };
+  content.append(form);
+  if (activeQuizMonitorConsent) {
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') recordQuizFocusEvent('hidden');
+    };
+    const onBlur = () => {
+      if (document.visibilityState !== 'hidden') recordQuizFocusEvent('blur');
+    };
+    activeQuizFocusHandlers = { onVisibility, onBlur };
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('blur', onBlur);
+  }
+}
+
+$('sessionQuizUploadForm').onsubmit = async event => {
+  event.preventDefault();
+  if (!activeSessionRoom || activeSessionRoom.direction !== 'received') return;
+  const button = $('sessionQuizGenerateButton');
+  const status = $('sessionQuizBuilderStatus');
+  const file = $('sessionQuizResourceFile').files[0];
+  const lessonNotes = $('sessionQuizResourceDescription').value.trim();
+  if (!file && lessonNotes.length < 120) {
+    status.textContent = 'Add at least 120 characters of lesson notes, or attach a handout.';
+    return;
+  }
+  button.disabled = true;
+  status.textContent = 'Uploading the private lesson material…';
+  try {
+    const sourceFile = file || new File(
+      [lessonNotes],
+      'session-lesson-notes.md',
+      { type: 'text/markdown' }
+    );
+    const form = new FormData();
+    form.append('title', $('sessionQuizResourceTitle').value.trim());
+    form.append('description', file ? lessonNotes : '');
+    form.append('subject_id', $('sessionQuizSubject').value);
+    form.append('is_published', '0');
+    form.append('file', sourceFile);
+    const response = await fetch('/api/resources', { method: 'POST', body: form });
+    const resourceResult = await response.json();
+    if (!response.ok) {
+      status.textContent = resourceResult.error || 'Could not upload lesson material.';
+      return;
+    }
+    status.textContent = 'Lesson uploaded. Gemini is drafting questions…';
+    const generated = await api(`/api/resources/${resourceResult.id}/quizzes/generate`, {
+      title: $('sessionQuizTitle').value.trim(),
+      multiple_choice_count: Number($('sessionQuizMcCount').value),
+      identification_count: Number($('sessionQuizIdCount').value),
+      external_ai_consent: $('sessionQuizGeminiConsent').checked,
+      focus_monitoring_enabled: true
+    });
+    if (!generated.ok) {
+      status.textContent = generated.data.error || 'Could not generate the quiz.';
+      return;
+    }
+    status.textContent = 'Draft generated. Review and edit every question before preparing it.';
+    await openTutorQuiz(generated.data.id, generated.data.message, activeSessionRoom.id);
+  } catch {
+    status.textContent = 'Could not upload or generate the lesson quiz. Check your connection and try again.';
+  } finally {
+    button.disabled = false;
+  }
+};
+
 async function refreshSessionRequests() {
   $('sessionRequestsStatus').textContent = 'Loading session requests…';
   const { ok, data } = await api('/session-requests');
-  const list = $('sessionRequestList');
-  list.replaceChildren();
+  const lists = {
+    pending: $('pendingSessionRequestList'),
+    accepted: $('acceptedSessionRequestList'),
+    past: $('pastSessionRequestList')
+  };
+  Object.values(lists).forEach(list => list.replaceChildren());
   if (!ok) {
+    sessionRequestsCache = [];
     $('sessionRequestsStatus').textContent = data.error || 'Could not load session requests.';
     return;
   }
+  sessionRequestsCache = data.requests;
   if (!data.requests.length) {
     $('sessionRequestsStatus').textContent = 'No session requests yet. You can request a time from a tutor profile.';
+    Object.entries(lists).forEach(([group, list]) => {
+      const empty = document.createElement('p');
+      empty.className = 'empty-state';
+      empty.textContent = group === 'pending'
+        ? 'No pending requests.'
+        : group === 'accepted' ? 'No accepted sessions yet.' : 'No past requests.';
+      list.append(empty);
+    });
     await refreshSessionRequestCount();
+    if (!$('tutorAcceptedCalendar').classList.contains('hide')) renderTutorAcceptedCalendar();
     return;
   }
   $('sessionRequestsStatus').textContent = '';
+  const counts = { pending: 0, accepted: 0, past: 0 };
   data.requests.forEach(item => {
     const card = document.createElement('article');
     card.className = 'request-card';
@@ -3742,8 +4709,15 @@ async function refreshSessionRequests() {
       ? `Request from ${item.learner_name}`
       : `Request to ${item.tutor_name}`;
     const when = document.createElement('p');
-    when.textContent = `Proposed time: ${formatRequestedTime(item.scheduled_for)}`;
+    when.textContent = item.scheduled_for
+      ? `Session time: ${formatRequestedTime(item.scheduled_for)}`
+      : 'Session time: To be arranged with the tutor';
     details.append(heading, when);
+    if (item.requested_subject_name) {
+      const subject = document.createElement('p');
+      subject.textContent = `Requested subject: ${item.requested_subject_name}`;
+      details.append(subject);
+    }
     const status = document.createElement('span');
     status.className = `request-status ${item.status}`;
     status.textContent = item.status;
@@ -3784,6 +4758,7 @@ async function refreshSessionRequests() {
           }
           $('sessionRequestsStatus').textContent = `Request ${nextStatus}.`;
           await refreshSessionRequests();
+          if (nextStatus === 'accepted') showAcceptedRequestNotice(item);
         };
         actions.append(button);
       });
@@ -3791,90 +4766,227 @@ async function refreshSessionRequests() {
     } else if (item.status === 'accepted') {
       const actions = document.createElement('div');
       actions.className = 'request-actions';
+      const room = document.createElement('button');
+      room.type = 'button';
+      room.className = 'ghost';
+      room.textContent = item.direction === 'sent' ? 'Go to tutor profile' : 'Open session room';
+      room.onclick = () => {
+        window.history.pushState({ sessionRoom: true }, '', `/sessions/${item.id}`);
+        route();
+      };
       const call = document.createElement('button');
       call.type = 'button';
       call.textContent = 'Join video call';
       call.onclick = () => startVideoCall(item);
-      actions.append(call);
+      actions.append(room, call);
       card.append(actions);
     }
-    list.append(card);
+    const group = item.status === 'pending' ? 'pending'
+      : item.status === 'accepted' ? 'accepted' : 'past';
+    counts[group] += 1;
+    lists[group].append(card);
+  });
+  Object.entries(lists).forEach(([group, list]) => {
+    if (counts[group]) return;
+    const empty = document.createElement('p');
+    empty.className = 'empty-state';
+    empty.textContent = group === 'pending'
+      ? 'No pending requests.'
+      : group === 'accepted' ? 'No accepted sessions yet.' : 'No past requests.';
+    list.append(empty);
   });
   await refreshSessionRequestCount();
+  if (!$('tutorAcceptedCalendar').classList.contains('hide')) renderTutorAcceptedCalendar();
 }
 
 async function showSessionRequests() {
+  $('sessionRequestsView').querySelector('h1').textContent = 'Session requests';
+  $('sessionRequestsView').querySelector('.request-heading p:last-child').textContent =
+    'Review proposed tutoring times and keep track of their status.';
+  $('pendingSessionRequestList').parentElement.classList.remove('hide');
+  $('pastSessionRequestList').parentElement.classList.remove('hide');
+  $('acceptedSessionRequestList').parentElement.classList.remove('hide');
+  $('tutorAcceptedCalendar').classList.add('hide');
+  $('acceptedRequestsTitle').textContent = 'Accepted requests';
   showDashboardPage('sessionRequestsView', $('requestsBtn'));
   await refreshSessionRequests();
 }
 
-async function submitSessionRequest(event) {
-  event.preventDefault();
-  const formStatus = $('sessionRequestFormStatus');
-  const submitButton = $('sessionRequestSubmit');
-  const localScheduledFor = $('sessionRequestedFor').value;
-  const proposedDate = localScheduledFor ? new Date(localScheduledFor) : null;
-  const note = $('sessionRequestNote').value.trim();
-  formStatus.textContent = '';
-  $('sessionRequestLogin').classList.add('hide');
-  if (!proposedDate || Number.isNaN(proposedDate.getTime())) {
-    formStatus.textContent = 'Choose a proposed date and time.';
-    return;
+async function showAcceptedSessions() {
+  $('sessionRequestsView').querySelector('h1').textContent = 'Accepted sessions';
+  $('sessionRequestsView').querySelector('.request-heading p:last-child').textContent =
+    'Open a session room or join a video call with your tutoring partner.';
+  $('pendingSessionRequestList').parentElement.classList.add('hide');
+  $('pastSessionRequestList').parentElement.classList.add('hide');
+  const showTutorCalendar = currentProfileData?.role !== 'learner';
+  const showAcceptedList = currentProfileData?.role !== 'tutor';
+  $('acceptedRequestsTitle').textContent = showAcceptedList
+    ? 'Your accepted sessions' : 'Accepted requests';
+  if (showAcceptedList) {
+    $('acceptedSessionRequestList').parentElement.classList.remove('hide');
+  } else {
+    $('acceptedSessionRequestList').parentElement.classList.add('hide');
   }
-  if (toLocalDateTimeValue(proposedDate) !== localScheduledFor) {
-    formStatus.textContent = 'Choose a valid local date and time.';
-    return;
+  if (showTutorCalendar) {
+    $('tutorAcceptedCalendar').classList.remove('hide');
+  } else {
+    $('tutorAcceptedCalendar').classList.add('hide');
   }
-  const scheduledFor = proposedDate.toISOString();
-  const selectedSlot = $('sessionAvailabilitySlot').selectedOptions[0];
-  if (!selectedSlot?.dataset.day) {
-    formStatus.textContent = 'Choose one of the tutor’s published availability slots.';
-    return;
-  }
-  const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  const pad = value => String(value).padStart(2, '0');
-  const proposedTime = `${pad(proposedDate.getHours())}:${pad(proposedDate.getMinutes())}`;
-  if (
-    weekdays[proposedDate.getDay()] !== selectedSlot.dataset.day
-    || proposedTime < selectedSlot.dataset.start
-    || proposedTime >= selectedSlot.dataset.end
-  ) {
-    formStatus.textContent =
-      `Choose a date and time within the selected ${selectedSlot.dataset.day} slot. This request will not reserve the slot.`;
-    return;
-  }
-  submitButton.disabled = true;
-  formStatus.textContent = 'Sending your request…';
-  const { ok, data } = await api('/session-requests', {
-    tutor_id: publicTutorId,
-    scheduled_for: scheduledFor,
-    availability_id: Number(selectedSlot.value),
-    timezone_offset_minutes: proposedDate.getTimezoneOffset(),
-    note
-  });
-  submitButton.disabled = false;
+  showDashboardPage('sessionRequestsView', $('acceptedSessionsBtn'));
+  await refreshSessionRequests();
+  if (showTutorCalendar) await loadTutorAcceptedCalendar();
+}
+
+function sessionDateParts(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  const pad = number => String(number).padStart(2, '0');
+  return {
+    date: `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`,
+    time: `${pad(date.getHours())}:${pad(date.getMinutes())}`
+  };
+}
+
+async function loadTutorAcceptedCalendar() {
+  $('tutorCalendarStatus').textContent = 'Loading your availability…';
+  const { ok, data } = await api('/tutor/availability');
   if (!ok) {
-    formStatus.textContent = data.error || 'Could not send session request.';
-    if (data.error === 'Not authenticated') {
-      $('sessionRequestLogin').href = `/?requestTutor=${encodeURIComponent(publicTutorId)}`;
-      $('sessionRequestLogin').textContent = 'Log in, then return to this profile to request a time';
-      $('sessionRequestLogin').classList.remove('hide');
-    }
+    tutorCalendarAvailability = [];
+    $('tutorCalendarStatus').textContent = data.error || 'Could not load tutor availability.';
+    renderTutorAcceptedCalendar();
     return;
   }
-  $('sessionRequestForm').reset();
-  $('sessionRequestActionStatus').textContent = 'Request sent. Follow its status from Session requests.';
-  closeSessionRequestDialog();
+  tutorCalendarAvailability = data.availability;
+  const undated = sessionRequestsCache.filter(item =>
+    item.direction === 'received' && item.status === 'accepted' && !item.scheduled_for
+  ).length;
+  $('tutorCalendarStatus').textContent = undated
+    ? `${undated} older accepted session${undated === 1 ? ' has' : 's have'} no selected date. New requests appear on this calendar.`
+    : 'Accepted sessions and recurring open availability are shown by date.';
+  renderTutorAcceptedCalendar();
+}
+
+function renderTutorAcceptedCalendar() {
+  const grid = $('tutorCalendarGrid');
+  if (!grid) return;
+  grid.replaceChildren();
+  const year = tutorCalendarMonth.getFullYear();
+  const month = tutorCalendarMonth.getMonth();
+  $('tutorCalendarMonth').textContent = tutorCalendarMonth.toLocaleDateString([], {
+    month: 'long', year: 'numeric'
+  });
+  const first = new Date(year, month, 1);
+  const leadingBlanks = first.getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  for (let index = 0; index < leadingBlanks; index += 1) {
+    const blank = document.createElement('div');
+    blank.className = 'tutor-calendar-day calendar-empty';
+    blank.setAttribute('aria-hidden', 'true');
+    grid.append(blank);
+  }
+  for (let dayNumber = 1; dayNumber <= daysInMonth; dayNumber += 1) {
+    const day = new Date(year, month, dayNumber);
+    const pad = number => String(number).padStart(2, '0');
+    const dateKey = `${day.getFullYear()}-${pad(day.getMonth() + 1)}-${pad(day.getDate())}`;
+    const cell = document.createElement('div');
+    cell.className = 'tutor-calendar-day';
+    const dateLabel = document.createElement('div');
+    dateLabel.className = 'tutor-calendar-date';
+    dateLabel.textContent = String(day.getDate());
+    cell.append(dateLabel);
+
+    const bookings = sessionRequestsCache.filter(item => {
+      if (item.direction !== 'received' || item.status !== 'accepted') return false;
+      return sessionDateParts(item.scheduled_for)?.date === dateKey;
+    });
+    bookings.forEach(item => {
+      const parts = sessionDateParts(item.scheduled_for);
+      const event = document.createElement('button');
+      event.type = 'button';
+      event.className = 'tutor-calendar-event';
+      event.textContent = `Booked · ${item.learner_name} · ${item.requested_subject_name || 'Session'} · ${parts?.time || ''}`;
+      event.title = 'Open session room';
+      event.onclick = () => {
+        window.history.pushState({ sessionRoom: true }, '', `/sessions/${item.id}`);
+        route();
+      };
+      cell.append(event);
+    });
+
+    const dayName = day.toLocaleDateString('en-US', { weekday: 'long' });
+    const openSlots = tutorCalendarAvailability.filter(slot => {
+      if (slot.day !== dayName) return false;
+      const [hours, minutes] = slot.start_time.split(':').map(Number);
+      return new Date(day.getFullYear(), day.getMonth(), day.getDate(), hours, minutes) > new Date();
+    });
+    openSlots.forEach(slot => {
+      const occupied = bookings.some(item => {
+        const parts = sessionDateParts(item.scheduled_for);
+        return Number(item.requested_subject_id) === Number(slot.subject_id)
+          && parts?.time === slot.start_time;
+      });
+      if (occupied) return;
+      const available = document.createElement('div');
+      available.className = 'tutor-calendar-available';
+      available.textContent = `Available · ${slot.subject_name || 'Tutoring'} · ${slot.start_time}–${slot.end_time}`;
+      cell.append(available);
+    });
+    grid.append(cell);
+  }
+  const trailingBlanks = (7 - ((leadingBlanks + daysInMonth) % 7)) % 7;
+  for (let index = 0; index < trailingBlanks; index += 1) {
+    const blank = document.createElement('div');
+    blank.className = 'tutor-calendar-day calendar-empty';
+    blank.setAttribute('aria-hidden', 'true');
+    grid.append(blank);
+  }
+}
+
+$('tutorCalendarPrevious').onclick = () => {
+  tutorCalendarMonth = new Date(tutorCalendarMonth.getFullYear(), tutorCalendarMonth.getMonth() - 1, 1);
+  renderTutorAcceptedCalendar();
+};
+$('tutorCalendarNext').onclick = () => {
+  tutorCalendarMonth = new Date(tutorCalendarMonth.getFullYear(), tutorCalendarMonth.getMonth() + 1, 1);
+  renderTutorAcceptedCalendar();
+};
+
+function showAcceptedRequestNotice(sessionRequest) {
+  $('acceptedRequestMessage').textContent = `You can find ${sessionRequest.learner_name} in the session area for this accepted request.`;
+  $('acceptedRequestGoToRoom').onclick = () => {
+    $('acceptedRequestDialog').classList.add('hide');
+    window.history.pushState({ sessionRoom: true }, '', `/sessions/${sessionRequest.id}`);
+    route();
+  };
+  $('acceptedRequestDialog').classList.remove('hide');
+  $('acceptedRequestGoToRoom').focus();
+}
+
+function closeAcceptedRequestNotice() {
+  $('acceptedRequestDialog').classList.add('hide');
 }
 
 $('inboxBtn').onclick = showInbox;
 $('requestsBtn').onclick = showSessionRequests;
+$('acceptedSessionsBtn').onclick = showAcceptedSessions;
 $('railRequestsBtn').onclick = showSessionRequests;
 $('requestsRefreshBtn').onclick = refreshSessionRequests;
 $('requestsBackBtn').onclick = () => {
   showDashboardHome();
 };
-$('sessionRequestForm').onsubmit = submitSessionRequest;
+$('acceptedRequestClose').onclick = closeAcceptedRequestNotice;
+$('acceptedRequestStay').onclick = closeAcceptedRequestNotice;
+$('acceptedRequestDialog').onclick = event => {
+  if (event.target === $('acceptedRequestDialog')) closeAcceptedRequestNotice();
+};
+$('sessionRoomBack').onclick = () => {
+  window.history.replaceState(null, '', '/');
+  activeSessionRoom = null;
+  if (activeSessionRoomTimer) window.clearInterval(activeSessionRoomTimer);
+  activeSessionRoomTimer = null;
+  showSessionRequests();
+};
 $('closeLearnerProfile').onclick = closeLearnerProfile;
 $('learnerProfileDialog').onclick = event => {
   if (event.target === $('learnerProfileDialog')) closeLearnerProfile();
@@ -4028,14 +5140,6 @@ $('tutorSearchForm').onsubmit = async e => {
   if (!ok) {
     $('tutorSearchStatus').textContent = data.error || 'Tutor search failed.';
     return;
-  }
-  if (subject) {
-    await loadLearnerResources(subject);
-  } else {
-    $('learnerResourceStatus').textContent = 'Search by subject to browse shared resources and quizzes.';
-    $('learnerResourceList').replaceChildren();
-    $('learnerQuizStatus').textContent = 'Search by subject to browse published quizzes.';
-    $('learnerQuizList').replaceChildren();
   }
   if (!data.tutors.length) {
     const queryDescription = [subject && `subject "${subject}"`, name && `name "${name}"`]
